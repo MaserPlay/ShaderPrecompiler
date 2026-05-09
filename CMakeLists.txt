@@ -29,7 +29,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(argparse)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/precompiler/precompiler.cpp")
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
