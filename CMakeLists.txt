@@ -1,0 +1,48 @@
+﻿cmake_minimum_required (VERSION 3.21)
+
+# Enable Hot Reload for MSVC compilers if supported.
+if (POLICY CMP0141)
+  cmake_policy(SET CMP0141 NEW)
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
+
+project (ShaderPrecompiler VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(BUILD_TESTS "Build tests" OFF)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/arc/${CMAKE_BUILD_TYPE})
+
+include(FetchContent)
+
+FetchContent_Declare(
+	argparse
+	GIT_REPOSITORY	https://github.com/p-ranav/argparse.git
+	GIT_TAG 	3eda91b2e1ce7d569f84ba295507c4cd8fd96910 #tag/3.2
+)
+FetchContent_MakeAvailable(argparse)
+
+# Add source to this project's executable.
+add_executable (${PROJECT_NAME} "src/main.cpp")
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+)
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    APPVERSION="${PROJECT_VERSION}"
+    APPNAME="${PROJECT_NAME}"
+    APPAUTHOR="MaserPlay"
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC argparse)
+
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
