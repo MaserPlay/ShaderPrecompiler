@@ -28,11 +28,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(argparse)
 
-# Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp" "src/precompiler/precompiler.cpp")
+add_library(${PROJECT_NAME}Core STATIC
+    "src/shader_precompiler.cpp" 
+    "src/precompiler/precompiler.cpp"
+)
+
+add_library(${PROJECT_NAME}::Core ALIAS ${PROJECT_NAME}Core)
+
+target_include_directories(${PROJECT_NAME}Core PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/ShaderPrecompiler>
+)
+
+add_executable(${PROJECT_NAME} "src/main.cpp")
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/ShaderPrecompiler>
 )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
@@ -41,7 +51,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     APPAUTHOR="MaserPlay"
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC argparse)
+target_link_libraries(${PROJECT_NAME} PUBLIC argparse ${PROJECT_NAME}::Core)
 
 if (BUILD_TESTS)
     add_subdirectory(tests)

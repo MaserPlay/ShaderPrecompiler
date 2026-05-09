@@ -4,8 +4,7 @@
 
 #include <argparse/argparse.hpp>
 
-#include "precompiler/precompiler.hpp"
-#include "ShaderPrecompiler.hpp"
+#include "shader_precompiler.hpp"
 
 enum class ShaderLanguages {
 	GLSL,
@@ -115,12 +114,6 @@ void outputResult(const argparse::ArgumentParser& program, const std::string& co
 	}
 }
 
-std::string process(const std::string code_) {
-	std::string code = code_;
-	code = precompiler::process(code);
-
-	return code;
-}
 
 int main(int argc, char* argv[]) {
 	argparse::ArgumentParser program{ APPNAME, APPVERSION };
@@ -139,7 +132,7 @@ int main(int argc, char* argv[]) {
 
 	ShaderLanguages shl = getShaderLanguage(program);
 
-	code = process(code);
+	code = shader_precompiler::process(code);
 
 	outputResult(program, code);
 

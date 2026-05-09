@@ -41,8 +41,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     APPAUTHOR="MaserPlay"
 )
 
-# target_link_libraries(${PROJECT_NAME} GameEngine::GameEngine)
+target_link_libraries(${PROJECT_NAME} ShaderPrecompiler::Core)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}../src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}../include/ShaderPrecompiler>
 )
