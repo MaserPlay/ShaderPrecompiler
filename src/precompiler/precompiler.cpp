@@ -22,11 +22,10 @@ namespace precompiler {
 			});
 	}
 
-	std::string process(std::istream& in_code, const std::map<std::string, std::string>& startupDefines) {
-		std::string outCode = "";
+	void process(std::istream& in_code, std::ostringstream& output, const std::map<std::string, std::string>& startupDefines) {
 
 		std::map<std::string, std::string> defines = startupDefines;
-		bool deleteLines = false;
+		bool deleteLines = false, isStart = true;
 
 		for (std::string line; std::getline(in_code, line);) {
 			if (line.empty()) {
@@ -45,10 +44,11 @@ namespace precompiler {
 					}
 					else if (!isPrecompilerDirective) {
 						if (!deleteLines) {
-							if (!outCode.empty()) {
-								outCode += '\n';
+							if (!isStart) {
+								output << '\n';
 							}
-							outCode += line;
+							isStart = false;
+							output << line;
 						}
 						break;
 					}
@@ -173,7 +173,5 @@ namespace precompiler {
 				}
 			}
 		}
-
-		return outCode;
 	}
 };

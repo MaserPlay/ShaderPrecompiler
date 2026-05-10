@@ -6,10 +6,8 @@
 
 
 namespace shader_precompiler {
-	std::string process(std::istream& code_, const shader_precompiler::ShaderLanguages language) {
-		std::string code = precompiler::process(code_);
-
-		return code;
+	void process(std::istream& code_, std::ostringstream& out, const shader_precompiler::ShaderLanguages language) {
+		precompiler::process(code_, out);
 	}
 
 
