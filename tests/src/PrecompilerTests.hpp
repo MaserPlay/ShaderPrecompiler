@@ -122,3 +122,13 @@ int value = 1;
 
     EXPECT_EQ(precompiler::process(input), "");
 }
+
+TEST(PrecompilerTests, defineReplaceWork)
+{
+    const std::string input = R"(
+#define TEST text
+TEST
+)";
+
+    EXPECT_EQ(precompiler::process(input), "text");
+}

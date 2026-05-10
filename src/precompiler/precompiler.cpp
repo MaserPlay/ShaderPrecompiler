@@ -31,18 +31,18 @@ namespace precompiler {
 		std::size_t numNestedIfdef = 0, // How nested are we?
 			deleteNestedIfDefs = 0; // how many nested code we need to delete
 		
-		std::size_t lineNum, currentDirective;
+		std::size_t lineNum = 0, currentDirective;
 
 		for (std::string line; std::getline(in_code, line);) {
 			if (line.empty()) {
 				continue;
 			}
+			lineNum++;
 
-			lineNum = 0, currentDirective = std::size(directives);
+			currentDirective = std::size(directives);
 			isInPrecompilerDirective = false;
 			for (std::size_t columnNum = 0; columnNum < line.size(); columnNum++)
 			{
-				lineNum++;
 				if (!std::isspace(line[columnNum])) {
 					if (line[columnNum] == '#') {
 						isInPrecompilerDirective = true;
@@ -54,7 +54,29 @@ namespace precompiler {
 								output << '\n';
 							}
 							isStart = false;
-							output << line;
+
+							if (defines.empty()) {
+								output << line;
+							}
+							else {
+
+								std::vector<std::string> definesVector{};
+								for (auto [name, define] : defines)
+								{
+									definesVector.push_back(name);
+								}
+
+								for (std::size_t li = 0; li < line.size(); li++)
+								{
+									if (auto define = string_utils::isThereAny(line, li, &definesVector[0], std::size(definesVector))) {
+										output << defines[definesVector[*define]];
+										li += definesVector[*define].size();
+									}
+									else {
+										output << line[li];
+									}
+								}
+							}
 						}
 						break;
 					}
@@ -62,13 +84,20 @@ namespace precompiler {
 						const auto anyStringIndex = string_utils::isThereAny(line, columnNum, directives, std::size(directives));
 						if (anyStringIndex.has_value()) {
 							columnNum += directives[*anyStringIndex].size();
-							std::string nextWord = string_utils::findNextWord(line, columnNum, true).value_or("");
+							std::string nextWord = string_utils::findNextWord(line, columnNum).value_or("");
 
 							switch (*anyStringIndex) {
 							case 0: // I.e. define
 							{
-								defines[nextWord] = "";
-								break;
+								if (line.size() >= columnNum + nextWord.size() + 2) {
+									std::string newString{ line, columnNum + nextWord.size() + 2 };
+									defines[nextWord] = newString;
+									break;
+								}
+								else {
+									defines[nextWord] = "";
+									break;
+								}
 							}
 							case 1: //I.e. undef
 							{
@@ -172,7 +201,7 @@ namespace precompiler {
 							}
 							case 8: // #warning
 							{
-								printError(ErrorCodes::ERROR_STATEMENT, nextWord, lineNum, columnNum + 1);
+								printError(ErrorCodes::ERROR_STATEMENT, std::string{ line, columnNum }, lineNum, columnNum + 1);
 							}
 							}
 							break;

@@ -31,13 +31,16 @@ namespace string_utils {
 	std::optional<std::string> findNextWord(const std::string& base, const std::size_t& index, const bool startInWord, const std::function<bool(char)> isLetter) {
 		std::string word{};
 		bool inWord = startInWord;
-		for (std::size_t wi = index; wi < base.size(); wi++)
+		for (std::size_t wi = index; wi <= base.size(); wi++)
 		{
 			if (isLetter(base[wi])) {
 				if (!inWord) {
 					inWord = true;
 				}
 				word += base[wi];
+				if (wi == base.size()) {
+					return word;
+				}
 			}
 			else {
 				if (inWord) {
