@@ -1,12 +1,27 @@
 #include "precompiler/precompiler.hpp"
+
+#include <iostream>
+
 #include "shader_precompiler.hpp"
 
 
 namespace shader_precompiler {
-	std::string process(const std::string code_) {
-		std::string code = code_;
-		code = precompiler::process(code);
+	std::string process(std::istream& code_, const shader_precompiler::ShaderLanguages language) {
+		std::string code = precompiler::process(code_);
 
 		return code;
+	}
+
+
+	std::function<void(const shader_precompiler::Error& error)> errorFunc =
+		[](const shader_precompiler::Error& error) {
+		std::cout << "ERROR: " << shader_precompiler::Error::stageToLetter(error.stage) << error.code << "   " << error.text << "   " << error.line << ':' << error.column << std::endl;
+		};
+
+	void setError(shader_precompiler::Error error) {
+		errorFunc(error);
+	}
+	void setErrorOutput(std::function<void(const shader_precompiler::Error& error)> func) {
+		errorFunc = func;
 	}
 };

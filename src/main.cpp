@@ -1,15 +1,13 @@
 ﻿#include <fstream>
 #include <iostream>
 #include <string>
+#include <sstream>
 
 #include <argparse/argparse.hpp>
 
 #include "shader_precompiler.hpp"
+#include "utils/string_utils.hpp"
 
-enum class ShaderLanguages {
-	GLSL,
-	ESSL
-};
 #define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
 
 void createArgumentApi(argparse::ArgumentParser& program) {
@@ -66,8 +64,8 @@ std::string collectInputCode(const argparse::ArgumentParser& program) {
 	return code;
 }
 
-ShaderLanguages getShaderLanguage(const argparse::ArgumentParser& program) {
-	ShaderLanguages shl;
+shader_precompiler::ShaderLanguages getShaderLanguage(const argparse::ArgumentParser& program) {
+	shader_precompiler::ShaderLanguages shl;
 	std::string arg;
 	try {
 		arg = program.get<std::string>("--out_language");
@@ -87,7 +85,7 @@ ShaderLanguages getShaderLanguage(const argparse::ArgumentParser& program) {
 		std::exit(EXIT_FAILURE);
 	}
 	else
-		shl = (ShaderLanguages)(result - begin(shader_langs));
+		shl = (shader_precompiler::ShaderLanguages)(result - begin(shader_langs));
 
 	return shl;
 }
@@ -107,7 +105,7 @@ void outputResult(const argparse::ArgumentParser& program, const std::string& co
 
 		if (out.is_open())
 		{
-			out << code << std::endl;
+			out << code;
 		}
 
 		out.close();
@@ -130,9 +128,9 @@ int main(int argc, char* argv[]) {
 
 	std::string code = collectInputCode(program);
 
-	ShaderLanguages shl = getShaderLanguage(program);
+	shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
-	code = shader_precompiler::process(code);
+	code = shader_precompiler::process(code, shl);
 
 	outputResult(program, code);
 

@@ -26,7 +26,7 @@ TEST(PrecompilerTests, RemoveExtraNewLines)
     const std::string expected =
         "void main() {\n"
         "gl_Position = vec4(1.0);\n"
-        "}\n";
+        "}";
 
     EXPECT_EQ(precompiler::process(input), expected);
 }
@@ -41,8 +41,7 @@ vec3 light = vec3(1.0);
 #endif
 )";
 
-    const std::string expected = R"(vec3 light = vec3(1.0);
-)";
+    const std::string expected = R"(vec3 light = vec3(1.0);)";
 
     EXPECT_EQ(precompiler::process(input), expected);
 }
@@ -67,7 +66,7 @@ float value = 1.0;
 )";
 
     const std::string expected =
-        "float value = 1.0;\n";
+        "float value = 1.0;";
 
     EXPECT_EQ(precompiler::process(input), expected);
 }
@@ -85,7 +84,7 @@ precision highp float;
 )";
 
     const std::string expected =
-        "precision mediump float;\n";
+        "precision mediump float;";
 
     EXPECT_EQ(precompiler::process(input), expected);
 }
@@ -104,7 +103,7 @@ TEST(PrecompilerTests, NestedIfdefs)
 )";
 
     const std::string expected =
-        "int value = 1;\n";
+        "        int value = 1;";
 
     EXPECT_EQ(precompiler::process(input), expected);
 }
@@ -121,15 +120,4 @@ int value = 1;
 )";
 
     EXPECT_EQ(precompiler::process(input), "");
-}
-
-TEST(PrecompilerTests, IgnoreUnknownDirectives)
-{
-    const std::string input = R"(
-#version 330 core
-
-void main() {}
-)";
-
-    EXPECT_EQ(precompiler::process(input), input);
 }

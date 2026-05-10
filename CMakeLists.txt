@@ -31,12 +31,13 @@ FetchContent_MakeAvailable(argparse)
 add_library(${PROJECT_NAME}Core STATIC
     "src/shader_precompiler.cpp" 
     "src/precompiler/precompiler.cpp"
-)
+ "src/utils/string_utils.cpp")
 
 add_library(${PROJECT_NAME}::Core ALIAS ${PROJECT_NAME}Core)
 
 target_include_directories(${PROJECT_NAME}Core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/ShaderPrecompiler>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
 
 add_executable(${PROJECT_NAME} "src/main.cpp")
