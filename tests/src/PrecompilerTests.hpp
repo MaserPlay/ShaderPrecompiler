@@ -117,6 +117,7 @@ TEST(PrecompilerTests, UndefMacro)
 #ifdef TEST
 int value = 1;
 #endif
+#warning it works?
 )";
 
     EXPECT_EQ(precompiler::process(input), "");

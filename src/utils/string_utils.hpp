@@ -3,7 +3,10 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <optional>
+#include <functional>
 
 namespace string_utils {
-	std::string::size_type findIgnoreCaps(const std::string base, const std::string findStr, const std::size_t pos = 0);
+	std::optional<std::size_t> isThereAny(const std::string& base, const std::size_t& baseIndex, const std::string list[], const std::size_t listSize);
+	std::optional<std::string> findNextWord(const std::string& base, const std::size_t& index, const bool startInWord = false, const std::function<bool(char)> isLetter = [](char ch) {return !std::isspace(ch);});
 };

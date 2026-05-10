@@ -8,16 +8,17 @@
 #include "utils/string_utils.hpp"
 #include "print_error.hpp"
 
-const std::string directives[]{ "define", "undef", "ifdef", "ifndef", "else", "elifdef", "elifndef", "endif" };
+const std::string directives[]{ "define", "undef", "ifdef", "ifndef", "else", "elifdef", "elifndef", "endif", "warning"};
 
 namespace precompiler {
 
 	enum class ErrorCodes {
-		DIRECTIVE_NOT_FOUND
+		DIRECTIVE_NOT_FOUND,
+		ERROR_STATEMENT
 	};
 
 	static void printError(ErrorCodes code, std::string text, std::size_t line, std::size_t column) {
-		shader_precompiler::setError(shader_precompiler::Error{ 
+		shader_precompiler::setError(shader_precompiler::Error{
 			shader_precompiler::Error::Stage::PREPROCESSOR, (std::size_t) code, text, line, column
 			});
 	}
@@ -25,25 +26,30 @@ namespace precompiler {
 	void process(std::istream& in_code, std::ostringstream& output, const std::map<std::string, std::string>& startupDefines) {
 
 		std::map<std::string, std::string> defines = startupDefines;
-		bool deleteLines = false, isStart = true;
+		bool isStart = true, isInPrecompilerDirective;
+
+		std::size_t numNestedIfdef = 0, // How nested are we?
+			deleteNestedIfDefs = 0; // how many nested code we need to delete
+		
+		std::size_t lineNum, currentDirective;
 
 		for (std::string line; std::getline(in_code, line);) {
 			if (line.empty()) {
 				continue;
 			}
 
-			std::size_t lineNum = 0, currentDirective = std::size(directives);
-			bool isPrecompilerDirective = false;
-			for (std::size_t column = 0; column < line.size(); column++)
+			lineNum = 0, currentDirective = std::size(directives);
+			isInPrecompilerDirective = false;
+			for (std::size_t columnNum = 0; columnNum < line.size(); columnNum++)
 			{
 				lineNum++;
-				if (!std::isspace(line[column])) {
-					if (line[column] == '#') {
-						isPrecompilerDirective = true;
+				if (!std::isspace(line[columnNum])) {
+					if (line[columnNum] == '#') {
+						isInPrecompilerDirective = true;
 						continue;
 					}
-					else if (!isPrecompilerDirective) {
-						if (!deleteLines) {
+					else if (!isInPrecompilerDirective) {
+						if (deleteNestedIfDefs == 0) {
 							if (!isStart) {
 								output << '\n';
 							}
@@ -52,43 +58,37 @@ namespace precompiler {
 						}
 						break;
 					}
-					else if (currentDirective != std::size(directives)) {
+					else {
+						const auto anyStringIndex = string_utils::isThereAny(line, columnNum, directives, std::size(directives));
+						if (anyStringIndex.has_value()) {
+							columnNum += directives[*anyStringIndex].size();
+							std::string nextWord = string_utils::findNextWord(line, columnNum, true).value_or("");
 
-						std::string word{};
-						for (std::size_t wi = column; wi < line.size(); wi++)
-						{
-							if (!std::isspace(line[wi])) {
-								word += line[wi];
-							}
-							else {
-								break;
-							}
-						}
-
-						switch (currentDirective) {
+							switch (*anyStringIndex) {
 							case 0: // I.e. define
 							{
-								defines[word] = "";
+								defines[nextWord] = "";
 								break;
 							}
 							case 1: //I.e. undef
 							{
-								if (defines.find(word) == end(defines))
+								if (defines.find(nextWord) == end(defines))
 								{
 									// Trying to undef undefined macro
 								}
 								else
 								{
-									defines.erase(word);
+									defines.erase(nextWord);
 								}
 								break;
 							}
 							case 2: //I.e. ifdef
 							{
+								numNestedIfdef++;
 								//defines.find
-								if (defines.find(word) == end(defines))
+								if (defines.find(nextWord) == end(defines))
 								{
-									deleteLines = true;
+									deleteNestedIfDefs++;
 								}
 								else
 								{
@@ -97,76 +97,90 @@ namespace precompiler {
 							}
 							case 3: //I.e. ifndef
 							{
+								numNestedIfdef++;
 								//defines.find
-								if (defines.find(word) == end(defines))
+								if (defines.find(nextWord) == end(defines))
 								{
 								}
 								else
 								{
-									deleteLines = true;
+									deleteNestedIfDefs++;
 								}
 								break;
 							}
-						}
-						break;
-					}
-					else {
-						for (std::size_t d = 0; d < std::size(directives); d++)
-						{
-							std::string directive = directives[d];
-							bool isWord = false;
-							if (line.size() >= column + directive.size()) {
-								for (std::size_t ii = 0; ii < directive.size(); ii++)
-								{
-									if (directive[ii] == line[ii + column]) {
-										isWord = true;
-									}
-									else {
-										isWord = false;
-										break;
-									}
+							case 4: //I.e. else
+							{
+								if (deleteNestedIfDefs == 1) {
+									deleteNestedIfDefs--;
 								}
+								else if (deleteNestedIfDefs == 0) {
+									deleteNestedIfDefs++;
+								}
+								break;
 							}
+							case 5: // elifdef
+							{
+								if (deleteNestedIfDefs == 1) {
 
-							if (isWord) {
-								currentDirective = d;
-								column += directive.size();
+									if (defines.find(nextWord) == end(defines))
+									{
+										deleteNestedIfDefs--;
+									}
+									else
+									{
+									}
+								}
+								else if (deleteNestedIfDefs == 0) {
+									if (defines.find(nextWord) == end(defines))
+									{
+										deleteNestedIfDefs++;
+									}
+									else
+									{
+									}
+								}
 								break;
 							}
-						}
-						if (currentDirective != std::size(directives)) {
-							switch (currentDirective) {
-								case 4: //I.e. else
-								{
-									deleteLines = !deleteLines;
-									break;
+							case 6: // elifndef
+							{
+								if (deleteNestedIfDefs == 1) {
+
+									if (defines.find(nextWord) == end(defines))
+									{
+									}
+									else
+									{
+										deleteNestedIfDefs--;
+									}
 								}
-								case 7: //I.e. endif
-								{
-									deleteLines = false;
-									break;
+								else if (deleteNestedIfDefs == 0) {
+									if (defines.find(nextWord) == end(defines))
+									{
+									}
+									else
+									{
+										deleteNestedIfDefs++;
+									}
 								}
+								break;
 							}
+							case 7: //I.e. endif
+							{
+								deleteNestedIfDefs--;
+								numNestedIfdef--;
+								break;
+							}
+							case 8: // #warning
+							{
+								printError(ErrorCodes::ERROR_STATEMENT, nextWord, lineNum, columnNum + 1);
+							}
+							}
+							break;
 						}
 						else {
+							std::string nextWord = string_utils::findNextWord(line, columnNum, true).value_or("");
 							// PrintError
-							std::string word{};
-							bool inWord = false;
-							for (std::size_t wi = column; wi < line.size(); wi++)
-							{
-								if (!std::isspace(line[wi])) {
-									if (!inWord) {
-										inWord = true;
-									}
-									word += line[wi];
-								}
-								else {
-									if (inWord) {
-										break;
-									}
-								}
-							}
-							printError(ErrorCodes::DIRECTIVE_NOT_FOUND, word + " directive not found", lineNum + 1, column + 1);
+							printError(ErrorCodes::DIRECTIVE_NOT_FOUND, nextWord + " directive not found", lineNum, columnNum + 1);
 							break;
 						}
 					}
