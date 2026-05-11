@@ -30,8 +30,8 @@ FetchContent_MakeAvailable(argparse)
 
 add_library(${PROJECT_NAME}Core STATIC
     "src/shader_precompiler.cpp" 
-    "src/precompiler/precompiler.cpp"
- "src/utils/string_utils.cpp")
+    "src/precompiler.cpp"
+ "src/utils/string_utils.cpp" "src/lexer.cpp")
 
 add_library(${PROJECT_NAME}::Core ALIAS ${PROJECT_NAME}Core)
 
