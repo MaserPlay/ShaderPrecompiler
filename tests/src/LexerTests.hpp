@@ -198,7 +198,7 @@ TEST(Lexer, FunctionCallWithClassAndArguments)
         "double a = class_name.func_name(.1, \"string\", property);"
     );
 
-    ASSERT_EQ(tokens.size(), 14)
+    ASSERT_EQ(tokens.size(), 16)
         << ::testing::PrintToString(tokensToStrings(tokens));
 
     EXPECT_EQ(tokens[0].text, "double")
