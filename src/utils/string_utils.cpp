@@ -4,6 +4,7 @@
 
 namespace string_utils {
 	std::optional<std::size_t> isThereAny(const std::string& base, const std::size_t& index, const std::string list[], const std::size_t listSize) {
+		std::optional<std::size_t> latestCoincidence = std::nullopt;
 		for (std::size_t d = 0; d < listSize; d++)
 		{
 			std::string directive = list[d];
@@ -12,7 +13,9 @@ namespace string_utils {
 				for (std::size_t ii = 0; ii < directive.size(); ii++)
 				{
 					if (directive[ii] == base[ii + index]) {
-						isWord = true;
+						if (ii == (directive.size() - 1)) {
+							isWord = true;
+						}
 					}
 					else {
 						isWord = false;
@@ -22,11 +25,13 @@ namespace string_utils {
 			}
 
 			if (isWord) {
-				return d;
+				if (!latestCoincidence || list[*latestCoincidence].size() < list[d].size()) {
+					latestCoincidence = d;
+				}
 			}
 		}
 
-		return std::nullopt;
+		return latestCoincidence;
 	}
 	std::optional<std::string> findNextWord(const std::string& base, const std::size_t& index, const bool startInWord, const std::function<bool(char)> isLetter) {
 		std::string word{};
