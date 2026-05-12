@@ -198,7 +198,7 @@ TEST(Lexer, FunctionCallWithClassAndArguments)
         "double a = class_name.func_name(.1, \"string\", property);"
     );
 
-    ASSERT_EQ(tokens.size(), 16)
+    ASSERT_EQ(tokens.size(), 14)
         << ::testing::PrintToString(tokensToStrings(tokens));
 
     EXPECT_EQ(tokens[0].text, "double")
@@ -246,7 +246,7 @@ TEST(Lexer, FunctionCallWithClassAndArguments)
     EXPECT_EQ(tokens[8].type, Token::Type::Symbol)
         << ::testing::PrintToString(tokens[8].toString());
 
-    EXPECT_EQ(tokens[9].text, "string")
+    EXPECT_EQ(tokens[9].text, "\"string\"")
         << ::testing::PrintToString(tokens[9].toString());
 
     EXPECT_EQ(tokens[10].text, ",")

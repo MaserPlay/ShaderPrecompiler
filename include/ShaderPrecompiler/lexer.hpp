@@ -17,6 +17,7 @@ namespace shader_precompiler::lexer {
 			Symbol,       // ; , ( ) {}
 			NewLine,
 			Comment,
+			String
 		};
 		Token(Type type, std::string text, std::size_t line, std::size_t column) : 
 			type(type), text(text), line(line), column(column) {}
@@ -52,6 +53,9 @@ namespace shader_precompiler::lexer {
 			case Type::Comment:
 				typeString = "Comment";
                 break;
+			case Type::String:
+				typeString = "String";
+				break;
 			default:
 				typeString = "Unknown";
 				break;
@@ -65,17 +69,40 @@ namespace shader_precompiler::lexer {
 
 	class LexerStream {
 		std::istream& input;
-		std::string buffer;
-		char nextChar;
 
 		std::size_t line;
 		std::size_t column;
 	public:
-		LexerStream(std::istream& input) : input(input), line(0), column(0), nextChar(-1), buffer({}) {}
+		LexerStream(std::istream& input) : input(input), line(0), column(0) {}
 		std::optional<Token> next();
 		inline bool eof() {
 			return input.eof();
 		}
+		char peek() {
+			return static_cast<char>(input.peek());
+		}
+		char get() {
+			char c = static_cast<char>(input.get());
+
+			if (c == '\n') {
+				line++;
+				column = 0;
+			}
+			else {
+				column++;
+			}
+
+			return c;
+		}
+		Token createToken(Token::Type type, std::string text) {
+			return Token(type, text, line, column);
+		}
+		Token readIdentifier();
+		Token readNumber(std::string prefix = "");
+		Token readSymbol(std::string prefix = "");
+		Token readOperator();
+		Token readDirective();
+		Token readString();
 	};
 
 	inline std::vector<Token> process(std::string input) {
