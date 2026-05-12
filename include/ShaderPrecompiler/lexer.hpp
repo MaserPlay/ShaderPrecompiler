@@ -15,9 +15,9 @@ namespace shader_precompiler::lexer {
 			Number,       // 1.0
 			Operator,     // + - * /
 			Symbol,       // ; , ( ) {}
-			NewLine,
-			Comment,
-			String
+			NewLine,      // \n
+			Comment,      //  //
+			String        // "text"
 		};
 		Token(Type type, std::string text, std::size_t line, std::size_t column) : 
 			type(type), text(text), line(line), column(column) {}

@@ -78,7 +78,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 	if (isIdentifier(nextChar)) return readIdentifier();
 
 	printError(ErrorCodes::UNEXPECTED_TOKEN, std::string{nextChar} + " UNEXPECTED_TOKEN", line, column);
-	return createToken((Token::Type) -1 , std::string{ nextChar });
+	return createToken((Token::Type) -1 , std::string{ get() });
 }
 
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readNumber(std::string prefix) {
