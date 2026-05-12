@@ -66,11 +66,30 @@ namespace shader_precompiler::lexer {
 	};
 
 	class BaseLexerStream {
-	public:
+		std::optional<Token> lookahead{ std::nullopt };
 		virtual std::optional<Token> next() = 0;
+	public:
 		BaseLexerStream() = default;
 		BaseLexerStream(const BaseLexerStream&) = delete; // No delete
 		BaseLexerStream(const BaseLexerStream&&) = delete; // No Move
+
+		virtual bool eof() = 0;
+		std::optional<Token> peek() {
+			if (!lookahead.has_value()) {
+				lookahead = next();   // прочитать и запомнить
+			}
+			return lookahead;
+		}
+		std::optional<Token> get() {
+			if (lookahead.has_value()) {
+				auto token = std::move(lookahead);
+				lookahead.reset();
+				return token;
+			}
+			else {
+				return next();
+			}
+		}
 	};
 
 	class LexerStream : public BaseLexerStream {
@@ -78,17 +97,17 @@ namespace shader_precompiler::lexer {
 
 		std::size_t line;
 		std::size_t column;
+		std::optional<Token> next() override;
 	public:
 		explicit LexerStream(std::istream& input) : input(input), line(0), column(0) {}
-		std::optional<Token> next() override;
 	private:
-		inline bool eof() {
+		inline bool eof() override {
 			return input.eof();
 		}
-		char peek() {
+		char peekChar() {
 			return static_cast<char>(input.peek());
 		}
-		char get() {
+		char getChar() {
 			char c = static_cast<char>(input.get());
 
 			if (c == '\n') {

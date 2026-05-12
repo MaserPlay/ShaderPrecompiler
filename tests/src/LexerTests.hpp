@@ -9,7 +9,7 @@ static std::vector<Token> processLexer(std::string input) {
     std::vector<Token> outputVector{};
     auto stream = LexerStream(iss);
 
-    while (auto next = stream.next()) {
+    while (auto next = stream.get()) {
         outputVector.push_back(*next);
     }
     return outputVector;

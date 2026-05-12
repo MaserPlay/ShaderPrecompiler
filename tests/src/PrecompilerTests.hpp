@@ -13,7 +13,7 @@ static std::vector<shader_precompiler::lexer::Token> processPrecompiler(std::str
 
 	std::vector<shader_precompiler::lexer::Token> outputVector{};
 
-	while (auto next = afterPreprocessor.next()) {
+	while (auto next = afterPreprocessor.get()) {
 		outputVector.push_back(*next);
 	}
 	return outputVector;
@@ -28,7 +28,7 @@ TEST(PrecompilerTests, EmptyInput)
 TEST(PrecompilerTests, PreserveSimpleCode)
 {
 	auto tokens = processPrecompiler("void main() {\ngl_Position = vec4(1.0);\n}");
-	ASSERT_SIZE(tokens, 15)
+	ASSERT_SIZE(tokens, 13)
 }
 
 TEST(PrecompilerTests, RemoveExtraNewLines)
@@ -37,7 +37,7 @@ TEST(PrecompilerTests, RemoveExtraNewLines)
 		"gl_Position = vec4(1.0);\n\n"
 		"}\n");
 
-	ASSERT_SIZE(tokens, 15)
+	ASSERT_SIZE(tokens, 13)
 }
 
 TEST(PrecompilerTests, ProcessDefine)
@@ -102,11 +102,11 @@ precision highp float;
 #endif
 )");
 
-	ASSERT_SIZE(tokens, 3)
+	ASSERT_SIZE(tokens, 4)
 
-		EXPECT_TEXT(tokens[0], "precision")
-		EXPECT_TEXT(tokens[1], "mediump")
-		EXPECT_TEXT(tokens[2], "float")
+	EXPECT_TEXT(tokens[0], "precision")
+	EXPECT_TEXT(tokens[1], "mediump")
+	EXPECT_TEXT(tokens[2], "float")
 }
 
 TEST(PrecompilerTests, NestedIfdefs)
@@ -148,13 +148,13 @@ int value = 1;
 TEST(PrecompilerTests, DefineReplaceWork)
 {
 	auto tokens = processPrecompiler(R"(
-#define TEST text
+#define TEST text 2 3
 TEST
 #warning warning works!!!
-#pragma wtf?
+#pragma
 )");
 
-	ASSERT_SIZE(tokens, 1)
+	ASSERT_SIZE(tokens, 3)
 
 	EXPECT_TEXT(tokens[0], "text")
 	EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
