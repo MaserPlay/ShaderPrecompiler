@@ -28,7 +28,7 @@ namespace shader_precompiler::lexer {
         std::size_t line;
         std::size_t column;
 
-        std::string toString() const {
+        std::string toDebugString() const {
 
             std::string typeString;
             switch (type) {
@@ -63,18 +63,25 @@ namespace shader_precompiler::lexer {
 
             return typeString + "[\"" + text + "\" " + std::to_string(line) + ":" + std::to_string(column) + " ]";
         }
-
-		operator std::string() const { return toString(); }
 	};
 
-	class LexerStream {
+	class BaseLexerStream {
+	public:
+		virtual std::optional<Token> next() = 0;
+		BaseLexerStream() = default;
+		BaseLexerStream(const BaseLexerStream&) = delete; // No delete
+		BaseLexerStream(const BaseLexerStream&&) = delete; // No Move
+	};
+
+	class LexerStream : public BaseLexerStream {
 		std::istream& input;
 
 		std::size_t line;
 		std::size_t column;
 	public:
-		LexerStream(std::istream& input) : input(input), line(0), column(0) {}
-		std::optional<Token> next();
+		explicit LexerStream(std::istream& input) : input(input), line(0), column(0) {}
+		std::optional<Token> next() override;
+	private:
 		inline bool eof() {
 			return input.eof();
 		}
@@ -104,27 +111,4 @@ namespace shader_precompiler::lexer {
 		Token readDirective();
 		Token readString();
 	};
-
-	inline std::vector<Token> process(std::string input) {
-		std::istringstream iss(input);   // создаём поток из строки
-		std::vector<Token> outputVector{};
-		auto stream = LexerStream(iss);
-
-		while (auto next = stream.next()) {
-			outputVector.push_back(*next);
-		}
-		return outputVector;
-	}
-
-	inline std::vector<std::string> tokensToStrings(
-		const std::vector<Token>& tokens)
-	{
-		std::vector<std::string> result;
-
-		for (const auto& token : tokens) {
-			result.push_back(token);
-		}
-
-		return result;
-	}
 };

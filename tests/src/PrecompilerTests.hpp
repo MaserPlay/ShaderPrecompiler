@@ -1,79 +1,98 @@
-#include <gtest/gtest.h>
+#include "../common.hpp"
+
+#include <vector>
 
 #include "precompiler.hpp"
 
+static std::vector<shader_precompiler::lexer::Token> processPrecompiler(std::string base) {
+	std::istringstream iss(base);   // создаём поток из строки
+
+	shader_precompiler::lexer::LexerStream tokenStream{ iss };
+
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor{ tokenStream };
+
+	std::vector<shader_precompiler::lexer::Token> outputVector{};
+
+	while (auto next = afterPreprocessor.next()) {
+		outputVector.push_back(*next);
+	}
+	return outputVector;
+}
+
 TEST(PrecompilerTests, EmptyInput)
 {
-	EXPECT_EQ(precompiler::process(""), "");
+	auto tokens = processPrecompiler("");
+	ASSERT_SIZE(tokens, 0)
 }
 
 TEST(PrecompilerTests, PreserveSimpleCode)
 {
-	const std::string input = R"(void main() {
-    gl_Position = vec4(1.0);
-})";
-
-	EXPECT_EQ(precompiler::process(input), input);
+	auto tokens = processPrecompiler("void main() {\ngl_Position = vec4(1.0);\n}");
+	ASSERT_SIZE(tokens, 15)
 }
 
 TEST(PrecompilerTests, RemoveExtraNewLines)
 {
-	const std::string input =
-		"void main() {\n\n\n"
+	auto tokens = processPrecompiler("void main() {\n\n\n"
 		"gl_Position = vec4(1.0);\n\n"
-		"}\n";
+		"}\n");
 
-	const std::string expected =
-		"void main() {\n"
-		"gl_Position = vec4(1.0);\n"
-		"}";
-
-	EXPECT_EQ(precompiler::process(input), expected);
+	ASSERT_SIZE(tokens, 15)
 }
 
 TEST(PrecompilerTests, ProcessDefine)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define USE_LIGHT
 
 #ifdef USE_LIGHT
 vec3 light = vec3(1.0);
 #endif
-)";
+)");
 
-	const std::string expected = R"(vec3 light = vec3(1.0);)";
+	ASSERT_SIZE(tokens, 8)
 
-	EXPECT_EQ(precompiler::process(input), expected);
+	EXPECT_TEXT(tokens[0], "vec3")
+	EXPECT_TEXT(tokens[1], "light")
+	EXPECT_TEXT(tokens[2], "=")
+	EXPECT_TEXT(tokens[3], "vec3")
+	EXPECT_TEXT(tokens[4], "(")
+	EXPECT_TEXT(tokens[5], "1.0")
+	EXPECT_TEXT(tokens[6], ")")
+	EXPECT_TEXT(tokens[7], ";")
 }
 
 TEST(PrecompilerTests, RemoveDisabledIfdef)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #ifdef UNKNOWN_DEFINE
 vec3 light = vec3(1.0);
 #endif
-)";
+)");
 
-	EXPECT_EQ(precompiler::process(input), "");
+	ASSERT_SIZE(tokens, 0)
 }
 
 TEST(PrecompilerTests, ProcessIfndef)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #ifndef DISABLED
 float value = 1.0;
 #endif
-)";
+)");
 
-	const std::string expected =
-		"float value = 1.0;";
+	ASSERT_SIZE(tokens, 5)
 
-	EXPECT_EQ(precompiler::process(input), expected);
+	EXPECT_TEXT(tokens[0], "float")
+	EXPECT_TEXT(tokens[1], "value")
+	EXPECT_TEXT(tokens[2], "=")
+	EXPECT_TEXT(tokens[3], "1.0")
+	EXPECT_TEXT(tokens[4], ";")
 }
 
 TEST(PrecompilerTests, ProcessElse)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define MOBILE
 
 #ifdef MOBILE
@@ -81,17 +100,18 @@ precision mediump float;
 #else
 precision highp float;
 #endif
-)";
+)");
 
-	const std::string expected =
-		"precision mediump float;";
+	ASSERT_SIZE(tokens, 3)
 
-	EXPECT_EQ(precompiler::process(input), expected);
+		EXPECT_TEXT(tokens[0], "precision")
+		EXPECT_TEXT(tokens[1], "mediump")
+		EXPECT_TEXT(tokens[2], "float")
 }
 
 TEST(PrecompilerTests, NestedIfdefs)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define A
 #define B
 
@@ -100,61 +120,79 @@ TEST(PrecompilerTests, NestedIfdefs)
         int value = 1;
     #endif
 #endif
-)";
+)");
 
-	const std::string expected =
-		"        int value = 1;";
+	ASSERT_SIZE(tokens, 5)
 
-	EXPECT_EQ(precompiler::process(input), expected);
+	EXPECT_TEXT(tokens[0], "int")
+	EXPECT_TEXT(tokens[1], "value")
+	EXPECT_TEXT(tokens[2], "=")
+	EXPECT_TEXT(tokens[3], "1")
+	EXPECT_TEXT(tokens[4], ";")
 }
 
 TEST(PrecompilerTests, UndefMacro)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define TEST
 #undef TEST
 
 #ifdef TEST
 int value = 1;
 #endif
-)";
+)");
 
-	EXPECT_EQ(precompiler::process(input), "");
+	ASSERT_SIZE(tokens, 0)
 }
 
-TEST(PrecompilerTests, defineReplaceWork)
+TEST(PrecompilerTests, DefineReplaceWork)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define TEST text
 TEST
 #warning warning works!!!
 #pragma wtf?
-)";
-	EXPECT_EQ(precompiler::process(input), "text");
+)");
+
+	ASSERT_SIZE(tokens, 1)
+
+	EXPECT_TEXT(tokens[0], "text")
+	EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
 }
 
-TEST(PrecompilerTests, replaceNestedDefines)
+TEST(PrecompilerTests, ReplaceNestedDefines)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define TEST text
 #define TEST_TWO TEST
 TEST_TWO
-)";
-	EXPECT_EQ(precompiler::process(input), "text");
+)");
+
+	ASSERT_SIZE(tokens, 1)
+
+	EXPECT_TEXT(tokens[0], "text")
+	EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
 }
 
-TEST(PrecompilerTests, rightDefineReplaceWork)
+TEST(PrecompilerTests, RightDefineReplaceWork)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define MAX 100
 int MAXIMUM = MAX;
-)";
-	EXPECT_EQ(precompiler::process(input), "int MAXIMUM = 100;");
+)");
+
+	ASSERT_SIZE(tokens, 5)
+
+	EXPECT_TEXT(tokens[0], "int")
+	EXPECT_TEXT(tokens[1], "MAXIMUM")
+	EXPECT_TEXT(tokens[2], "=")
+	EXPECT_TEXT(tokens[3], "100")
+	EXPECT_TEXT(tokens[4], ";")
 }
 
-TEST(PrecompilerTests, nestedFalseTrueIfdefs)
+TEST(PrecompilerTests, NestedFalseTrueIfdefs)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define TEST
 
 #ifndef NOT_FOUND
@@ -162,13 +200,14 @@ TEST(PrecompilerTests, nestedFalseTrueIfdefs)
 text
 #endif
 #endif
-)";
+)");
 
-	EXPECT_EQ(precompiler::process(input), "");
+	ASSERT_SIZE(tokens, 0)
 }
-TEST(PrecompilerTests, nestedTrueFalseIfdefs)
+
+TEST(PrecompilerTests, NestedTrueFalseIfdefs)
 {
-	const std::string input = R"(
+	auto tokens = processPrecompiler(R"(
 #define TEST
 
 #ifndef TEST
@@ -176,7 +215,7 @@ TEST(PrecompilerTests, nestedTrueFalseIfdefs)
 text
 #endif
 #endif
-)";
+)");
 
-	EXPECT_EQ(precompiler::process(input), "");
+	ASSERT_SIZE(tokens, 0)
 }

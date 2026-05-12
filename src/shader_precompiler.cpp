@@ -6,9 +6,6 @@
 
 
 namespace shader_precompiler {
-	void process(std::istream& code_, std::ostringstream& out, const shader_precompiler::ShaderLanguages language) {
-		precompiler::process(code_, out);
-	}
 
 
 	std::function<void(const shader_precompiler::Error& error)> errorFunc =

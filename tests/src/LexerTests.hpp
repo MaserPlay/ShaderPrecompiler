@@ -1,271 +1,252 @@
-#include <gtest/gtest.h>
+#include "../common.hpp"
 
 #include "lexer.hpp"
 
 using namespace shader_precompiler::lexer;
 
+static std::vector<Token> processLexer(std::string input) {
+    std::istringstream iss(input);   // создаём поток из строки
+    std::vector<Token> outputVector{};
+    auto stream = LexerStream(iss);
+
+    while (auto next = stream.next()) {
+        outputVector.push_back(*next);
+    }
+    return outputVector;
+}
+
 TEST(Lexer, EmptyInput)
 {
-    auto tokens = process("");
+    auto tokens = processLexer("");
 
-    EXPECT_TRUE(tokens.empty()) << ::testing::PrintToString(tokensToStrings(tokens));
+    EXPECT_TRUE(tokens.empty()) << ::testing::PrintToString(tokensToDebugStrings(tokens));
 }
 TEST(Lexer, Identifier)
 {
-    auto tokens = process("hello");
+    auto tokens = processLexer("hello");
 
-    ASSERT_EQ(tokens.size(), 1) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 1)
 
-    EXPECT_EQ(tokens[0].text, "hello") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Identifier) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "hello")
+    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
 }
 
 TEST(Lexer, MultipleIdentifiers)
 {
-    auto tokens = process("hello world");
+    auto tokens = processLexer("hello world");
 
-    ASSERT_EQ(tokens.size(), 2) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 2)
 
-    EXPECT_EQ(tokens[0].text, "hello") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[1].text, "world") << ::testing::PrintToString(tokens[1].toString());
+    EXPECT_TEXT(tokens[0], "hello")
+    EXPECT_TEXT(tokens[1], "world")
 
-    EXPECT_EQ(tokens[0].type, Token::Type::Identifier) << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[1].type, Token::Type::Identifier) << ::testing::PrintToString(tokens[1].toString());
+    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
 }
 
 TEST(Lexer, Number)
 {
-    auto tokens = process("123");
+    auto tokens = processLexer("123");
 
-    ASSERT_EQ(tokens.size(), 1) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 1)
 
-    EXPECT_EQ(tokens[0].text, "123") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Number) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "123")
+    EXPECT_TYPE(tokens[0], Token::Type::Number)
 }
 
 TEST(Lexer, FloatNumber)
 {
-    auto tokens = process("1.5");
+    auto tokens = processLexer("1.5");
 
-    ASSERT_EQ(tokens.size(), 1) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 1)
 
-    EXPECT_EQ(tokens[0].text, "1.5") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Number) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "1.5")
+    EXPECT_TYPE(tokens[0], Token::Type::Number)
 }
 
 TEST(Lexer, Symbol)
 {
-    auto tokens = process("{");
+    auto tokens = processLexer("{");
 
-    ASSERT_EQ(tokens.size(), 1) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 1)
 
-    EXPECT_EQ(tokens[0].text, "{") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Symbol) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "{")
+    EXPECT_TYPE(tokens[0], Token::Type::Symbol)
 }
 
 TEST(Lexer, MultipleSymbols)
 {
     std::string sourceString = "{}();";
-    auto tokens = process("{}();");
+    auto tokens = processLexer("{}();");
 
-    ASSERT_EQ(tokens.size(), sourceString.size()) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, sourceString.size())
 
     for (std::size_t i = 0; i < sourceString.size(); i++)
     {
-        EXPECT_EQ(tokens[i].text[0], sourceString[i]) << ::testing::PrintToString(tokens[i].toString());
-        EXPECT_EQ(tokens[i].type, Token::Type::Symbol) << ::testing::PrintToString(tokens[i].toString());
+        EXPECT_EQ(tokens[i].text[0], sourceString[i]) << ::testing::PrintToString(tokens[i].toDebugString());
+        EXPECT_EQ(tokens[i].type, Token::Type::Symbol) << ::testing::PrintToString(tokens[i].toDebugString());
     }
 }
 
 TEST(Lexer, Operator)
 {
-    auto tokens = process("=");
+    auto tokens = processLexer("=");
 
-    ASSERT_EQ(tokens.size(), 1) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 1)
 
-    EXPECT_EQ(tokens[0].text, "=") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Operator) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "=")
+    EXPECT_TYPE(tokens[0], Token::Type::Operator)
 }
 
 TEST(Lexer, ComplexExpression)
 {
-    auto tokens = process("vec3 color = vec3(1.0);");
+    auto tokens = processLexer("vec3 color = vec3(1.0);");
 
-    ASSERT_EQ(tokens.size(), 8) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_EQ(tokens.size(), 8) << ::testing::PrintToString(tokensToDebugStrings(tokens));
 
-    EXPECT_EQ(tokens[0].text, "vec3") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[1].text, "color") << ::testing::PrintToString(tokens[1].toString());
-    EXPECT_EQ(tokens[2].text, "=") << ::testing::PrintToString(tokens[2].toString());
-    EXPECT_EQ(tokens[3].text, "vec3") << ::testing::PrintToString(tokens[3].toString());
-    EXPECT_EQ(tokens[4].text, "(") << ::testing::PrintToString(tokens[4].toString());
-    EXPECT_EQ(tokens[5].text, "1.0") << ::testing::PrintToString(tokens[5].toString());
-    EXPECT_EQ(tokens[6].text, ")") << ::testing::PrintToString(tokens[6].toString());
-    EXPECT_EQ(tokens[7].text, ";") << ::testing::PrintToString(tokens[7].toString());
+    EXPECT_TEXT(tokens[0], "vec3")
+    EXPECT_TEXT(tokens[1], "color")
+    EXPECT_TEXT(tokens[2], "=")
+    EXPECT_TEXT(tokens[3], "vec3")
+    EXPECT_TEXT(tokens[4], "(")
+    EXPECT_TEXT(tokens[5], "1.0")
+    EXPECT_TEXT(tokens[6], ")")
+    EXPECT_TEXT(tokens[7], ";")
+
+    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[2], Token::Type::Operator)
+    EXPECT_TYPE(tokens[3], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[4], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[5], Token::Type::Number)
+    EXPECT_TYPE(tokens[6], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[7], Token::Type::Symbol)
 }
 
 TEST(Lexer, Directive)
 {
-    auto tokens = process("#ifdef");
+    auto tokens = processLexer("#ifdef");
 
-    ASSERT_EQ(tokens.size(), 1) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 1)
 
-    EXPECT_EQ(tokens[0].text, "#ifdef") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Directive) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "#ifdef")
+    EXPECT_TYPE(tokens[0], Token::Type::Directive)
 }
 
 TEST(Lexer, IfdefBlock)
 {
-    auto tokens = process(
+    auto tokens = processLexer(
         "#ifdef LIGHTING\n"
         "vec3 color;\n"
         "#endif"
     );
 
-    ASSERT_GE(tokens.size(), 4) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 8)
 
-    EXPECT_EQ(tokens[0].text, "#ifdef") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[1].text, "LIGHTING") << ::testing::PrintToString(tokens[1].toString());
+    EXPECT_TEXT(tokens[0], "#ifdef")
+    EXPECT_TEXT(tokens[1], "LIGHTING")
 
-    EXPECT_EQ(tokens[0].type, Token::Type::Directive) << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[1].type, Token::Type::Identifier) << ::testing::PrintToString(tokens[1].toString());
+    EXPECT_TYPE(tokens[0], Token::Type::Directive)
+    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
 }
 
 TEST(Lexer, IgnoreWhitespace)
 {
-    auto tokens = process("   hello     world   ");
+    auto tokens = processLexer("   hello     world   ");
 
-    ASSERT_EQ(tokens.size(), 2) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 2)
 
-    EXPECT_EQ(tokens[0].text, "hello") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[1].text, "world") << ::testing::PrintToString(tokens[1].toString());
+    EXPECT_TEXT(tokens[0], "hello")
+    EXPECT_TEXT(tokens[1], "world")
 }
 
 TEST(Lexer, LineAndColumn)
 {
-    auto tokens = process(
+    auto tokens = processLexer(
         "abc\n"
         "def"
     );
 
-    ASSERT_EQ(tokens.size(), 3) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_EQ(tokens.size(), 3) << ::testing::PrintToString(tokensToDebugStrings(tokens));
 
-    EXPECT_EQ(tokens[0].line, 0) << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].column, 0) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_EQ(tokens[0].line, 0) << ::testing::PrintToString(tokens[0].toDebugString());
+    EXPECT_EQ(tokens[0].column, 0) << ::testing::PrintToString(tokens[0].toDebugString());
 
-    EXPECT_EQ(tokens[2].line, 1) << ::testing::PrintToString(tokens[2].toString());
+    EXPECT_EQ(tokens[2].line, 1) << ::testing::PrintToString(tokens[2].toDebugString());
 }
 
 TEST(Lexer, ShaderExample)
 {
-    auto tokens = process(
+    auto tokens = processLexer(
         "#version 330 core\n"
         "layout(location = 0) in vec3 aPos;"
     );
 
-    ASSERT_FALSE(tokens.empty()) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 14)
 
-    EXPECT_EQ(tokens[0].text, "#version") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Directive) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "#version")
+    EXPECT_TYPE(tokens[0], Token::Type::Directive)
 }
 
 TEST(Lexer, FloatNumberStartDot)
 {
-    auto tokens = process(
+    auto tokens = processLexer(
         "double a = .1;"
     );
 
-    ASSERT_EQ(tokens.size(), 5) << ::testing::PrintToString(tokensToStrings(tokens));
+    ASSERT_SIZE(tokens, 5)
 
-    EXPECT_EQ(tokens[0].text, "double") << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Identifier) << ::testing::PrintToString(tokens[0].toString());
+    EXPECT_TEXT(tokens[0], "double")
+    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
 
-    EXPECT_EQ(tokens[1].text, "a") << ::testing::PrintToString(tokens[1].toString());
-    EXPECT_EQ(tokens[1].type, Token::Type::Identifier) << ::testing::PrintToString(tokens[1].toString());
+    EXPECT_TEXT(tokens[1], "a")
+    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
 
-    EXPECT_EQ(tokens[2].text, "=") << ::testing::PrintToString(tokens[2].toString());
-    EXPECT_EQ(tokens[2].type, Token::Type::Operator) << ::testing::PrintToString(tokens[2].toString());
+    EXPECT_TEXT(tokens[2], "=")
+    EXPECT_TYPE(tokens[2], Token::Type::Operator)
 
-    EXPECT_EQ(tokens[3].text, ".1") << ::testing::PrintToString(tokens[3].toString());
-    EXPECT_EQ(tokens[3].type, Token::Type::Number) << ::testing::PrintToString(tokens[3].toString());
+    EXPECT_TEXT(tokens[3], ".1")
+    EXPECT_TYPE(tokens[3], Token::Type::Number)
 
-    EXPECT_EQ(tokens[4].text, ";") << ::testing::PrintToString(tokens[4].toString());
-    EXPECT_EQ(tokens[4].type, Token::Type::Symbol) << ::testing::PrintToString(tokens[4].toString());
+    EXPECT_TEXT(tokens[4], ";")
+    EXPECT_TYPE(tokens[4], Token::Type::Symbol)
 }
 
 TEST(Lexer, FunctionCallWithClassAndArguments)
 {
-    auto tokens = process(
+    auto tokens = processLexer(
         "double a = class_name.func_name(.1, \"string\", property);"
     );
+    
+    ASSERT_SIZE(tokens, 14)
 
-    ASSERT_EQ(tokens.size(), 14)
-        << ::testing::PrintToString(tokensToStrings(tokens));
+    EXPECT_TEXT(tokens[0], "double")
+    EXPECT_TEXT(tokens[1], "a")
+    EXPECT_TEXT(tokens[2], "=")
+    EXPECT_TEXT(tokens[3], "class_name")
+    EXPECT_TEXT(tokens[4], ".")
+    EXPECT_TEXT(tokens[5], "func_name")
+    EXPECT_TEXT(tokens[6], "(")
+    EXPECT_TEXT(tokens[7], ".1")
+    EXPECT_TEXT(tokens[8], ",")
+    EXPECT_TEXT(tokens[9], "\"string\"")
+    EXPECT_TEXT(tokens[10], ",")
+    EXPECT_TEXT(tokens[11], "property")
+    EXPECT_TEXT(tokens[12], ")")
+    EXPECT_TEXT(tokens[13], ";")
 
-    EXPECT_EQ(tokens[0].text, "double")
-        << ::testing::PrintToString(tokens[0].toString());
-    EXPECT_EQ(tokens[0].type, Token::Type::Identifier)
-        << ::testing::PrintToString(tokens[0].toString());
-
-    EXPECT_EQ(tokens[1].text, "a")
-        << ::testing::PrintToString(tokens[1].toString());
-    EXPECT_EQ(tokens[1].type, Token::Type::Identifier)
-        << ::testing::PrintToString(tokens[1].toString());
-
-    EXPECT_EQ(tokens[2].text, "=")
-        << ::testing::PrintToString(tokens[2].toString());
-    EXPECT_EQ(tokens[2].type, Token::Type::Operator)
-        << ::testing::PrintToString(tokens[2].toString());
-
-    EXPECT_EQ(tokens[3].text, "class_name")
-        << ::testing::PrintToString(tokens[3].toString());
-    EXPECT_EQ(tokens[3].type, Token::Type::Identifier)
-        << ::testing::PrintToString(tokens[3].toString());
-
-    EXPECT_EQ(tokens[4].text, ".")
-        << ::testing::PrintToString(tokens[4].toString());
-    EXPECT_EQ(tokens[4].type, Token::Type::Symbol)
-        << ::testing::PrintToString(tokens[4].toString());
-
-    EXPECT_EQ(tokens[5].text, "func_name")
-        << ::testing::PrintToString(tokens[5].toString());
-    EXPECT_EQ(tokens[5].type, Token::Type::Identifier)
-        << ::testing::PrintToString(tokens[5].toString());
-
-    EXPECT_EQ(tokens[6].text, "(")
-        << ::testing::PrintToString(tokens[6].toString());
-    EXPECT_EQ(tokens[6].type, Token::Type::Symbol)
-        << ::testing::PrintToString(tokens[6].toString());
-
-    EXPECT_EQ(tokens[7].text, ".1")
-        << ::testing::PrintToString(tokens[7].toString());
-    EXPECT_EQ(tokens[7].type, Token::Type::Number)
-        << ::testing::PrintToString(tokens[7].toString());
-
-    EXPECT_EQ(tokens[8].text, ",")
-        << ::testing::PrintToString(tokens[8].toString());
-    EXPECT_EQ(tokens[8].type, Token::Type::Symbol)
-        << ::testing::PrintToString(tokens[8].toString());
-
-    EXPECT_EQ(tokens[9].text, "\"string\"")
-        << ::testing::PrintToString(tokens[9].toString());
-
-    EXPECT_EQ(tokens[10].text, ",")
-        << ::testing::PrintToString(tokens[10].toString());
-    EXPECT_EQ(tokens[10].type, Token::Type::Symbol)
-        << ::testing::PrintToString(tokens[10].toString());
-
-    EXPECT_EQ(tokens[11].text, "property")
-        << ::testing::PrintToString(tokens[11].toString());
-    EXPECT_EQ(tokens[11].type, Token::Type::Identifier)
-        << ::testing::PrintToString(tokens[11].toString());
-
-    EXPECT_EQ(tokens[12].text, ")")
-        << ::testing::PrintToString(tokens[12].toString());
-    EXPECT_EQ(tokens[12].type, Token::Type::Symbol)
-        << ::testing::PrintToString(tokens[12].toString());
-
-    EXPECT_EQ(tokens[13].text, ";")
-        << ::testing::PrintToString(tokens[13].toString());
-    EXPECT_EQ(tokens[13].type, Token::Type::Symbol)
-        << ::testing::PrintToString(tokens[13].toString());
+    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[2], Token::Type::Operator)
+    EXPECT_TYPE(tokens[3], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[4], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[5], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[6], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[7], Token::Type::Number)
+    EXPECT_TYPE(tokens[8], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[9], Token::Type::String)
+    EXPECT_TYPE(tokens[10], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[11], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[12], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[13], Token::Type::Symbol)
 }

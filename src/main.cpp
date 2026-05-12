@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
 
 	shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
-	code = shader_precompiler::process(code, shl);
+	//code = shader_precompiler::process(code, shl);
 
 	outputResult(program, code);
 

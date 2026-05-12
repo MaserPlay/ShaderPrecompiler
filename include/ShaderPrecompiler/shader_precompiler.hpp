@@ -10,12 +10,6 @@ namespace shader_precompiler {
 		ESSL
 	};
 
-	std::string process(std::istream& code, const ShaderLanguages language);
-	inline std::string process(const std::string code, const ShaderLanguages language) {
-		std::istringstream iss(code);   // создаём поток из строки
-		return process(iss, language);
-	}
-
 
 	struct Error
 	{

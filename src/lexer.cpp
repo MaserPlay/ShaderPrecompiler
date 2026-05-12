@@ -14,7 +14,7 @@ static void printError(ErrorCodes code, std::string text, std::size_t line, std:
 }
 
 bool isOperator(char sym) {
-	for (char this_char : "+-*/=%&^|") {
+	for (char this_char : "+-*/=%&^|!?") {
 		if (sym == this_char) {
 			return true;
 		}
@@ -48,7 +48,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 	while (!eof()) {
 		nextChar = peek();
 
-		if (!std::isspace(nextChar)) {
+		if (nextChar == '\n' || !std::isspace(nextChar)) {
 			break;
 		}
 		else {
@@ -69,6 +69,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 		return readSymbol(".");
 	}
 	if (nextChar == '\n') {
+		get();
 		return createToken(Token::Type::NewLine, "\n");
 	}
 	if (std::isdigit(nextChar)) return readNumber();
