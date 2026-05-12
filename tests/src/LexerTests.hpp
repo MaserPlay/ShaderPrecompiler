@@ -64,6 +64,16 @@ TEST(Lexer, FloatNumber)
     EXPECT_TYPE(tokens[0], Token::Type::Number)
 }
 
+TEST(Lexer, NumberWithMultipleDotsBug)
+{
+    auto tokens = processLexer("1.52..2.2.2..2.2.2..2");
+
+    ASSERT_SIZE(tokens, 11)
+
+    EXPECT_TEXT(tokens[0], "1.52")
+    EXPECT_TYPE(tokens[0], Token::Type::Number)
+}
+
 TEST(Lexer, Symbol)
 {
     auto tokens = processLexer("{");

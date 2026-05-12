@@ -83,13 +83,19 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readNumber(std::string prefix) {
 	std::string buffer = prefix;
+	bool wasDot = prefix.find('.') != std::string::npos;
 
 	while (!eof()) {
 		char c = peekChar();
 
-		if (!std::isdigit(c) && c != '.') {
+		if (c == '.') {
+			if (wasDot) {
+				break;
+			}
+			wasDot = true;
+		} else if (!std::isdigit(c)) {
 			break;
-		}
+		} 
 
 		buffer += getChar();
 	}
