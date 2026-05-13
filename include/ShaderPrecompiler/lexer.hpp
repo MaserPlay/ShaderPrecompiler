@@ -126,8 +126,9 @@ namespace shader_precompiler::lexer {
 		Token readIdentifier();
 		Token readNumber(std::string prefix = "");
 		Token readSymbol(std::string prefix = "");
-		Token readOperator();
+		Token readOperator(std::string prefix = "");
 		Token readDirective();
 		Token readString();
+		Token readCommentStartSlash();
 	};
 };

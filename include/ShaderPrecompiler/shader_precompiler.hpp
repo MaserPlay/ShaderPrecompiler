@@ -15,9 +15,9 @@ namespace shader_precompiler {
 	{
 		enum class Stage
 		{
-			PREPROCESSOR,
 			LEXER,
-			TOKINEZER,
+			PREPROCESSOR,
+			AST,
 		};
 		static char stageToLetter(const Stage& stage) {
 			switch (stage) {
@@ -25,8 +25,8 @@ namespace shader_precompiler {
 					return 'P';
 				case Stage::LEXER:
 					return 'L';
-				case Stage::TOKINEZER:
-					return 'T';
+				case Stage::AST:
+					return 'A';
 				default:
 					return 'NOT';
 			}

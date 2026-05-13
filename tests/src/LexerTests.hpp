@@ -43,6 +43,18 @@ TEST(Lexer, MultipleIdentifiers)
     EXPECT_TYPE(tokens[0], Token::Type::Identifier)
     EXPECT_TYPE(tokens[1], Token::Type::Identifier)
 }
+TEST(Lexer, Comment)
+{
+    auto tokens = processLexer("////// texttexttext");
+
+    ASSERT_SIZE(tokens, 1)
+}
+TEST(Lexer, MultiLineComment)
+{
+    auto tokens = processLexer("/**** texttexttext\n\n\n\n\n\n\n**************/");
+
+    ASSERT_SIZE(tokens, 1)
+}
 
 TEST(Lexer, Number)
 {

@@ -68,6 +68,16 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 
 		return readSymbol(".");
 	}
+	if (nextChar == '/') {
+		getChar();
+
+		nextChar = peekChar();
+		if (peekChar() == '/' || peekChar() == '*') {
+			return readCommentStartSlash();
+		}
+
+		return readOperator("/");
+	}
 	if (nextChar == '\n') {
 		getChar();
 		return createToken(Token::Type::NewLine, "\n");
@@ -81,6 +91,38 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 	return createToken((Token::Type) -1 , std::string{ getChar() });
 }
 
+shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readCommentStartSlash() {
+	std::string buffer = "/";
+	bool isMultiLine = (peekChar() == '*');
+	char c = peekChar();
+
+	if (isMultiLine) {
+		while (!eof()) {
+
+			buffer += getChar();
+
+			if (buffer.back() == '*' && c == '/') {
+				break;
+			}
+
+			c = peekChar();
+		}
+	}
+	else {
+		while (!eof()) {
+
+			buffer += getChar();
+
+			if (c == '\n') {
+				break;
+			}
+
+			c = peekChar();
+		}
+	}
+
+	return createToken(Token::Type::Comment, buffer);
+}
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readNumber(std::string prefix) {
 	std::string buffer = prefix;
 	bool wasDot = prefix.find('.') != std::string::npos;
@@ -154,7 +196,6 @@ shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readStr
 }
 
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readSymbol(std::string prefix) {
-
 	if (prefix.empty()) {
 		return createToken(Token::Type::Symbol, std::string{ getChar() });
 	}
@@ -163,7 +204,11 @@ shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readSym
 	}
 }
 
-shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readOperator() {
-
-	return createToken(Token::Type::Operator, std::string{ getChar() });
+shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readOperator(std::string prefix) {
+	if (prefix.empty()) {
+		return createToken(Token::Type::Operator, std::string{ getChar() });
+	}
+	else {
+		return createToken(Token::Type::Operator, prefix);
+	}
 }

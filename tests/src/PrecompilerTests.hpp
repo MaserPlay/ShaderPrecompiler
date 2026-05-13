@@ -27,7 +27,7 @@ TEST(PrecompilerTests, EmptyInput)
 
 TEST(PrecompilerTests, PreserveSimpleCode)
 {
-	auto tokens = processPrecompiler("void main() {\ngl_Position = vec4(1.0);\n}");
+	auto tokens = processPrecompiler("void main() {//tetettet\ngl_Position = vec4(1.0);\n}");
 	ASSERT_SIZE(tokens, 13)
 }
 

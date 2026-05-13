@@ -43,7 +43,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 	lastToken = from.peek();
 	while (true) {
 
-		if (!lastToken || from.eof()) return std::nullopt;
+		if (!lastToken.has_value() || from.eof()) return std::nullopt;
 
 		if (lastToken->type == shader_precompiler::lexer::Token::Type::NewLine) {
 			from.get();
@@ -52,13 +52,17 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 			if (lastToken && lastToken->type == shader_precompiler::lexer::Token::Type::Directive) {
 				handleDirective(from.get().value());
 			}
+		} else
+		if (lastToken->type == shader_precompiler::lexer::Token::Type::Comment) {
+			from.get();
 		}
 
 		lastToken = from.peek();
 		if (lastToken && 
 			!this->needSkipCode() &&
 			lastToken.value().type != shader_precompiler::lexer::Token::Type::NewLine &&
-			lastToken.value().type != shader_precompiler::lexer::Token::Type::Directive) {
+			lastToken.value().type != shader_precompiler::lexer::Token::Type::Directive &&
+			lastToken.value().type != shader_precompiler::lexer::Token::Type::Comment) {
 			from.get();
 
 			if (lastToken->type == shader_precompiler::lexer::Token::Type::Identifier &&
