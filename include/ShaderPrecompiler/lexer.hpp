@@ -10,14 +10,38 @@ namespace shader_precompiler::lexer {
 	struct Token
 	{
 		enum class Type {
-			Identifier,   // vec3, color
-			Directive,    // #ifdef #define
-			Number,       // 1.0
-			Operator,     // + - * /
-			Symbol,       // ; , ( ) {}
-			NewLine,      // \n
-			Comment,      //  //
-			String        // "text"
+			/// <summary>
+			/// vec3, color
+			/// </summary>
+			Identifier,
+			/// <summary>
+			/// #ifdef #define
+			/// </summary>
+			Directive,
+			/// <summary>
+			/// 1.0 1 2 101010
+			/// </summary>
+			Number,
+			/// <summary>
+			/// + - * / = % & ^ | ! ?
+			/// </summary>
+			Operator,
+			/// <summary>
+			/// ; , ( ) { } "
+			/// </summary>
+			Symbol,
+			/// <summary>
+			/// \n
+			/// </summary>
+			NewLine,
+			/// <summary>
+			/// // /* */
+			/// </summary>
+			Comment,
+			/// <summary>
+			/// "text" "aksasfuyasg"
+			/// </summary>
+			String
 		};
 		Token(Type type, std::string text, std::size_t line, std::size_t column) : 
 			type(type), text(text), line(line), column(column) {}
@@ -88,6 +112,22 @@ namespace shader_precompiler::lexer {
 			}
 			else {
 				return next();
+			}
+		}
+
+		static bool saveToStream$needSpaceBetween(Token::Type t) {
+			return t == Token::Type::Identifier ||
+				t == Token::Type::Number;
+		}
+
+		inline void saveToStream(std::ostream& stream) {
+			Token::Type lastType = (Token::Type) -1;
+			while (auto next = this->get()) {
+				if (saveToStream$needSpaceBetween(lastType) && saveToStream$needSpaceBetween(next->type)) {
+					stream << ' ';
+				}
+				stream << next->text;
+				lastType = next->type;
 			}
 		}
 	};

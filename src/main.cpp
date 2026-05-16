@@ -6,6 +6,8 @@
 #include <argparse/argparse.hpp>
 
 #include "shader_precompiler.hpp"
+#include "lexer.hpp"
+#include "precompiler.hpp"
 #include "utils/string_utils.hpp"
 
 #define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
@@ -34,8 +36,7 @@ void createArgumentApi(argparse::ArgumentParser& program) {
 	output.add_argument("--std_cout", "-stdout").help("Output by std::cout").flag();
 }
 
-std::string collectInputCode(const argparse::ArgumentParser& program) {
-	std::string code;
+void collectInputCode(const argparse::ArgumentParser& program, std::function<void(std::istream&)> workWithStream) {
 
 	// Collect Input Code
 	if (auto file_name = program.present<std::string>("--input_file")) {
@@ -45,23 +46,30 @@ std::string collectInputCode(const argparse::ArgumentParser& program) {
 			std::cerr << "Failed to open file: " << *file_name << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-
-		code = std::string((std::istreambuf_iterator<char>(file)),
-			std::istreambuf_iterator<char>());
+		workWithStream(file);
 
 	}
 	else if (program.get<bool>("--std_cin") == true) {
-		std::cin >> code;
+		workWithStream(std::cin);
 	}
 	else if (auto code_arg = program.present<std::string>("--code")) {
-		code = *code_arg;
+		std::istringstream str(*code_arg);
+		workWithStream(str);
 	}
 	else {
 		std::cerr << "Failed to get input_code" << std::endl;
 		std::abort();
 	}
 
-	return code;
+}
+
+static void processAll(std::istream& in, std::ostream& out) {
+
+	shader_precompiler::lexer::LexerStream tokenStream{ in };
+
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor{ tokenStream };
+
+	afterPreprocessor.saveToStream(out);
 }
 
 shader_precompiler::ShaderLanguages getShaderLanguage(const argparse::ArgumentParser& program) {
@@ -90,9 +98,9 @@ shader_precompiler::ShaderLanguages getShaderLanguage(const argparse::ArgumentPa
 	return shl;
 }
 
-void outputResult(const argparse::ArgumentParser& program, const std::string& code) {
+void outputResult(const argparse::ArgumentParser& program, std::function<void(std::ostream&)> workWithStream) {
 	if (program.get<bool>("--std_cout") == true) {
-		std::cout << code;
+		workWithStream(std::cout);
 	}
 	else {
 		std::string file_name = program.present<std::string>("--output_file")
@@ -105,7 +113,7 @@ void outputResult(const argparse::ArgumentParser& program, const std::string& co
 
 		if (out.is_open())
 		{
-			out << code;
+			workWithStream(out);
 		}
 
 		out.close();
@@ -126,13 +134,10 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	std::string code = collectInputCode(program);
-
 	shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
-	//code = shader_precompiler::process(code, shl);
-
-	outputResult(program, code);
+	collectInputCode(program, [&program](std::istream& in) {
+		outputResult(program, [&in](std::ostream& out) {processAll(in, out); }); });
 
 	return 0;
 }
