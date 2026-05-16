@@ -43,7 +43,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 	lastToken = from.peek();
 	while (true) {
 
-		if (!lastToken.has_value() || from.eof()) return std::nullopt;
+		if (!lastToken.has_value()) return std::nullopt;
 
 		if (lastToken->type == shader_precompiler::lexer::Token::Type::NewLine) {
 			from.get();

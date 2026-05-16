@@ -120,6 +120,20 @@ TEST(Lexer, Operator)
     EXPECT_TYPE(tokens[0], Token::Type::Operator)
 }
 
+TEST(Lexer, SimplyExpression) {
+    auto tokens = processLexer("a = 2");
+
+    ASSERT_SIZE(tokens, 3)
+
+    EXPECT_TEXT(tokens[0], "a")
+    EXPECT_TEXT(tokens[1], "=")
+    EXPECT_TEXT(tokens[2], "2")
+
+    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], Token::Type::Operator)
+    EXPECT_TYPE(tokens[2], Token::Type::Number)
+}
+
 TEST(Lexer, ComplexExpression)
 {
     auto tokens = processLexer("vec3 color = vec3(1.0);");
