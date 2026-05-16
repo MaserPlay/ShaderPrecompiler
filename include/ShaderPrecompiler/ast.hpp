@@ -196,7 +196,7 @@ namespace shader_precompiler::ast {
 		AstParser(shader_precompiler::lexer::BaseLexerStream& stream) : from(stream) {}
 
 		std::unique_ptr<nodes::Node> parseExpression(int minPrec = 0);
-		std::unique_ptr<nodes::Node> parseSingle(bool onlyPeek = false);
+		std::unique_ptr<nodes::Node> parseSingle();
 		std::unique_ptr<nodes::Node> parseInitialization();
 		std::shared_ptr<nodes::CodeBlock> createTree();
 	};

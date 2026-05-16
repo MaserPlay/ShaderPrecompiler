@@ -60,7 +60,8 @@ TEST(AstTests, RightOperationOrderExpression) {
 		)
 	);
 
-	ASSERT_TRUE(rightTree->equals(*tree)) << tree->toDebugString(0);
+	ASSERT_TRUE(rightTree->equals(*tree)) << "Actual: " + tree->toDebugString(0) + 
+		"\nExpected: " + rightTree->toDebugString(0);
 }
 
 TEST(AstTests, EmptyFunc) {

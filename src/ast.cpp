@@ -42,21 +42,18 @@ bool isSingle(shader_precompiler::lexer::Token::Type t) {
 		t == shader_precompiler::lexer::Token::Type::String;
 }
 
-int precedence(const std::string& op)
+short precedence(const std::string& op)
 {
-	if (op == "*" || op == "/") return 2;
-	if (op == "+" || op == "-") return 1;
+	if (op == "*" || op == "/") return 4;
+	if (op == "+" || op == "-") return 3;
 	return 0;
 }
 
-std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseSingle(bool onlyPeek) {
+std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseSingle() {
 	auto token = from.peek();
 
 	if (token && isSingle(token->type)) {
-
-		if (!onlyPeek) {
-			from.get();
-		}
+		from.get();
 
 		if (token->type == shader_precompiler::lexer::Token::Type::Number) {
 			return std::make_unique<
@@ -85,7 +82,8 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	std::unique_ptr<shader_precompiler::ast::nodes::Node> left{};
 
-	if (types.find(first->text) != end(types)) {
+	if (first->type == shader_precompiler::lexer::Token::Type::Identifier && 
+		types.find(first->text) != end(types)) {
 		left = parseInitialization();
 	}
 	else {
@@ -104,9 +102,11 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 		from.get();
 
-		auto right = parseExpression(prec);
+		auto right = parseExpression(prec + 2);
 
 		auto operator_ = std::make_unique<shader_precompiler::ast::nodes::Operator>();
+
+
 		operator_->op = op->text;
 		operator_->left = std::move(left);
 		operator_->right = std::move(right);
