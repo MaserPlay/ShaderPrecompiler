@@ -15,9 +15,9 @@ enum class ErrorCodes {
 	REPLACING_DEFINE_TO_NONE
 };
 
-static void printError(ErrorCodes code, std::string text, std::size_t line, std::size_t column) {
+static void printError(ErrorCodes code, std::string text, shader_precompiler::lexer::Token token) {
 	shader_precompiler::setError(shader_precompiler::Error{
-		shader_precompiler::Error::Stage::PREPROCESSOR, (std::size_t)code, text, line, column
+		shader_precompiler::Error::Stage::PREPROCESSOR, (std::size_t)code, text, token.line, token.column
 		});
 }
 
@@ -71,7 +71,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 				auto defineSize = defines.at(lastToken->text).size();
 				if (defineSize == 0) {
 					printError(ErrorCodes::REPLACING_DEFINE_TO_NONE, "Warning: deleting " + lastToken->text + " by #define", 
-						lastToken->line, lastToken->column);
+						*lastToken);
 				}
 				else if (defineSize >= 2) {
 					insertDefine = InsertDefine{};
@@ -125,7 +125,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 		}
 
 		printError(ErrorCodes::WARNING_STATEMENT, "Warning: " +
-			buffer, directiveToken.line, directiveToken.column);
+			buffer, directiveToken);
 		return;
 	}
 
@@ -153,7 +153,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 						auto defineSize = defines.at(nextToken->text).size();
 						if (defineSize == 0) {
 							printError(ErrorCodes::REPLACING_DEFINE_TO_NONE, "Warning: deleting " + nextToken->text + " by #define",
-								nextToken->line, nextToken->column);
+								*nextToken);
 						}
 						else {
 							for (auto& i : defines.at(nextToken->text)) {
@@ -249,12 +249,12 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 		}
 		else {
 			printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected macro name: unexpected token " +
-				macro->text, macro->line, macro->column);
+				macro->text, *macro);
 		}
 	}
 	else {
-		printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected macro name: No next token.", directiveToken.line, directiveToken.column);
+		printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected macro name: No next token.", directiveToken);
 	}
 
-	printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected directive name " + directiveToken.text, directiveToken.line, directiveToken.column);
+	printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected directive name " + directiveToken.text, directiveToken);
 }

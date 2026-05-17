@@ -153,11 +153,31 @@ namespace shader_precompiler::ast {
 			std::unique_ptr<CodeBlock> code;
 			std::unique_ptr<Identifier> name;
 			std::unique_ptr<Identifier> returnType;
+			std::vector<std::unique_ptr< VariableInitialization>> params;
+			bool onlyDeclaration{};
 
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "Func:\n";
 				final += name->toDebugString(nesting + 1) + '\n';
-				final += code->toDebugString(nesting + 1);
+				final += ident(nesting + 1) + 
+					(onlyDeclaration ? "onlyDeclaration = true\n" : "onlyDeclaration = false\n");
+
+				for (auto& e : params)
+				{
+					if (e) {
+						final += e->toDebugString(nesting + 2) + '\n';
+					}
+				}
+				if (params.empty()) {
+					final += ident(nesting + 1) + "PARAMS_EMPTY\n";
+				}
+
+				if (code) {
+					final += code->toDebugString(nesting + 1);
+				}
+				else {
+					final += ident(nesting + 1) + "CODE_NULL";
+				}
 				return final;
 			}
 
@@ -167,10 +187,12 @@ namespace shader_precompiler::ast {
 
 				return nodeEq(code, p->code) &&
 					nodeEq(name, p->name) &&
-					nodeEq(returnType, p->returnType);
+					nodeEq(returnType, p->returnType) &&
+					onlyDeclaration == p->onlyDeclaration;
 			}
-			Func(std::unique_ptr<CodeBlock> code, std::unique_ptr<Identifier> name, std::unique_ptr<Identifier> returnType) : 
-				returnType(std::move(returnType)), name(std::move(name)), code(std::move(code)) {}
+			Func() = default;
+			Func(std::unique_ptr<Identifier> returnType, std::unique_ptr<Identifier> name, std::unique_ptr<CodeBlock> code, bool onlyDeclaration) :
+				returnType(std::move(returnType)), name(std::move(name)), code(std::move(code)), onlyDeclaration(onlyDeclaration) {}
 		};
 
 		struct NumberExpr : Node {
@@ -191,13 +213,20 @@ namespace shader_precompiler::ast {
 	class AstParser {
 		shader_precompiler::lexer::BaseLexerStream& from;
 		std::shared_ptr<nodes::CodeBlock> base;
-		std::set<std::string> types{ "vec3", "int", "double" };
+		std::set<std::string> types{ "vec3", "int", "double", "void" };
+
+		std::unique_ptr<nodes::Node> parseExpression(std::unique_ptr<shader_precompiler::ast::nodes::Node> left, int minPrec = 0);
+		std::unique_ptr<nodes::Node> parseSingle();
+		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
+		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
+		std::unique_ptr<nodes::Node> parseDeclaration();
+		std::unique_ptr<nodes::CodeBlock> parseCodeBlock();
+
+		inline bool isType(std::string s) {
+			return types.find(s) != end(types);
+		}
 	public:
 		AstParser(shader_precompiler::lexer::BaseLexerStream& stream) : from(stream) {}
-
-		std::unique_ptr<nodes::Node> parseExpression(int minPrec = 0);
-		std::unique_ptr<nodes::Node> parseSingle();
-		std::unique_ptr<nodes::Node> parseInitialization();
 		std::shared_ptr<nodes::CodeBlock> createTree();
 	};
 }

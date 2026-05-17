@@ -46,6 +46,9 @@ namespace shader_precompiler::lexer {
 		Token(Type type, std::string text, std::size_t line, std::size_t column) : 
 			type(type), text(text), line(line), column(column) {}
 
+		Token(Type type, std::string text) :
+			Token(type, text, 0, 0) {}
+
         Type type;
         std::string text;
 
@@ -87,6 +90,12 @@ namespace shader_precompiler::lexer {
 
             return typeString + "[\"" + text + "\" " + std::to_string(line) + ":" + std::to_string(column) + " ]";
         }
+		bool operator==(const Token& token) const {
+			return type == token.type && text == token.text;
+		}
+		bool operator!=(const Token& token) const {
+			return !(token == (*this));
+		}
 	};
 
 	class BaseLexerStream {

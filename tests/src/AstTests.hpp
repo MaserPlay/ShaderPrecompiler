@@ -38,7 +38,7 @@ TEST(AstTests, SimplyExpression) {
 }
 
 TEST(AstTests, RightOperationOrderExpression) {
-	auto tree = processAst("int a = 2+2*2;");
+	auto tree = processAst("int a = 2+(2*2);");
 
 	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
 	rightTree->expressions.push_back(
@@ -71,9 +71,10 @@ TEST(AstTests, EmptyFunc) {
 	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
 	rightTree->expressions.push_back(
 		std::make_unique<shader_precompiler::ast::nodes::Func>(
-			std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(),
+			std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
 			std::make_unique< shader_precompiler::ast::nodes::Identifier>("main"),
-			std::make_unique< shader_precompiler::ast::nodes::Identifier>("void")
+			std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(),
+			false
 		)
 	);
 
