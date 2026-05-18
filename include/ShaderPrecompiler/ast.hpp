@@ -9,14 +9,20 @@
 namespace shader_precompiler::ast {
 
 	namespace nodes {
-
-		inline std::string ident(const std::size_t nesting) {
-			return std::string(nesting, '\t');
-		}
 		struct Node {
 			virtual ~Node() = default;
 			virtual std::string toDebugString(std::size_t nesting) const = 0;
+			template<class N>
+			inline bool operator==(const N& b) const {
+				static_assert(std::is_base_of_v<Node, N>);
+				return this->equals(b);
+			}
+		protected:
 			virtual bool equals(const Node& other) const = 0;
+			inline static std::string ident(const std::size_t nesting) {
+				return std::string(nesting, '\t');
+			}
+
 			template<class N, class E>
 			inline static bool nodeEq(const std::unique_ptr<N>& a,
 				const std::unique_ptr<E>& b)
@@ -26,11 +32,16 @@ namespace shader_precompiler::ast {
 				if (!a || !b)
 					return a == b;
 
-				return a->equals(*b);
+				return *a == *b;
 			}
-
-			inline bool operator==(const Node& b) {
-				return this->equals(b);
+			template<class T>
+			inline static std::string unique_ptr_to_debug_string(const std::unique_ptr<T>& input, const std::size_t nesting) {
+				if (input) {
+					return input->toDebugString(nesting);
+				}
+				else {
+					return ident(nesting) + "NULL";
+				}
 			}
 		};
 
@@ -50,6 +61,9 @@ namespace shader_precompiler::ast {
 				}
 				return final;
 			}
+			CodeBlock() = default;
+			CodeBlock(std::vector<std::unique_ptr<Node>> expressions) : expressions(std::move(expressions)) {};
+		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const CodeBlock*>(&other);
 				if (!p) return false;
@@ -80,6 +94,24 @@ namespace shader_precompiler::ast {
 			}
 		};
 
+		struct Return : Node {
+			std::unique_ptr<Node> value;
+			Return() = default;
+			Return(std::unique_ptr<Node> value) : value(std::move(value)) {}
+			std::string toDebugString(std::size_t nesting) const override {
+				std::string final = ident(nesting) + "Return:\n";
+				final += unique_ptr_to_debug_string(value, nesting + 1) + '\n';
+				return final;
+			}
+			bool equals(const Node& other) const override {
+				if (auto p = dynamic_cast<const Return*>(&other))
+				{
+					return nodeEq(p->value, this->value);
+				}
+				return false;
+			}
+		};
+
 		struct VariableInitialization : Node {
 			std::unique_ptr<Identifier> type;
 			std::unique_ptr<Identifier> name;
@@ -87,20 +119,11 @@ namespace shader_precompiler::ast {
 			VariableInitialization(std::unique_ptr<Identifier> type, std::unique_ptr<Identifier> name) : type(std::move(type)), name(std::move(name)) {}
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "VariableInitialization:\n";
-				if (type) {
-					final += type->toDebugString(nesting + 1) + '\n';
-				}
-				else {
-					final += ident(nesting + 1) + "NULL\n";
-				}
-				if (name) {
-					final += name->toDebugString(nesting + 1);
-				}
-				else {
-					final += ident(nesting + 1) + "NULL";
-				}
+				final += unique_ptr_to_debug_string(type, nesting + 1) + '\n';
+				final += unique_ptr_to_debug_string(name, nesting + 1);
 				return final;
 			}
+		protected:
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const VariableInitialization*>(&other))
 				{
@@ -117,21 +140,11 @@ namespace shader_precompiler::ast {
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "Operator:\n";
 
-				if (left) {
-					final += left->toDebugString(nesting + 1) + '\n';
-				}
-				else {
-					final += ident(nesting + 1) + "NULL\n";
-				}
+				final += unique_ptr_to_debug_string(left, nesting + 1) + '\n';
 
 				final += ident(nesting + 1) + op + '\n';
 
-				if (right) {
-					final += right->toDebugString(nesting + 1);
-				}
-				else {
-					final += ident(nesting + 1) + "NULL";
-				}
+				final += unique_ptr_to_debug_string(right, nesting + 1);
 
 				return final;
 			}
@@ -139,6 +152,7 @@ namespace shader_precompiler::ast {
 			Operator(std::unique_ptr<Node> left, std::string op, std::unique_ptr<Node> right) : 
 				left(std::move(left)), right(std::move(right)), op(op) {}
 
+		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const Operator*>(&other);
 				if (!p) return false;
@@ -149,50 +163,63 @@ namespace shader_precompiler::ast {
 			}
 		};
 
-		struct Func : Node {
-			std::unique_ptr<CodeBlock> code;
+		struct FuncDeclaration : Node {
 			std::unique_ptr<Identifier> name;
 			std::unique_ptr<Identifier> returnType;
 			std::vector<std::unique_ptr< VariableInitialization>> params;
-			bool onlyDeclaration{};
 
 			std::string toDebugString(std::size_t nesting) const override {
-				std::string final = ident(nesting) + "Func:\n";
-				final += name->toDebugString(nesting + 1) + '\n';
-				final += ident(nesting + 1) + 
-					(onlyDeclaration ? "onlyDeclaration = true\n" : "onlyDeclaration = false\n");
+				std::string final = ident(nesting) + "FuncDeclaration:\n";
+				final += unique_ptr_to_debug_string(name, nesting + 1) + '\n';
 
+				final += ident(nesting + 1) + "PARAMS:\n";
 				for (auto& e : params)
 				{
 					if (e) {
-						final += e->toDebugString(nesting + 2) + '\n';
+						final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
 					}
 				}
 				if (params.empty()) {
 					final += ident(nesting + 1) + "PARAMS_EMPTY\n";
 				}
 
-				if (code) {
-					final += code->toDebugString(nesting + 1);
-				}
-				else {
-					final += ident(nesting + 1) + "CODE_NULL";
-				}
 				return final;
 			}
 
+			FuncDeclaration() = default;
+			FuncDeclaration(std::unique_ptr<Identifier> returnType, std::unique_ptr<Identifier> name, std::vector<std::unique_ptr< VariableInitialization>> params) :
+				returnType(std::move(returnType)), name(std::move(name)), params(std::move(params)) {}
+		protected:
+			bool equals(const Node& other) const override {
+				auto p = dynamic_cast<const FuncDeclaration*>(&other);
+				if (!p) return false;
+
+				return nodeEq(name, p->name) &&
+					nodeEq(returnType, p->returnType);
+			}
+		};
+		struct Func : Node {
+			std::unique_ptr<FuncDeclaration> declaration;
+			std::unique_ptr<CodeBlock> code;
+
+			std::string toDebugString(std::size_t nesting) const override {
+				std::string final = ident(nesting) + "Func:\n";
+				final += unique_ptr_to_debug_string(declaration, nesting + 1);
+				final += unique_ptr_to_debug_string(code, nesting + 1);
+				return final;
+			}
+
+			Func() = default;
+			Func(std::unique_ptr<FuncDeclaration> declaration, std::unique_ptr<CodeBlock> code) :
+				code(std::move(code)), declaration(std::move(declaration)) {}
+		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const Func*>(&other);
 				if (!p) return false;
 
 				return nodeEq(code, p->code) &&
-					nodeEq(name, p->name) &&
-					nodeEq(returnType, p->returnType) &&
-					onlyDeclaration == p->onlyDeclaration;
+					nodeEq(declaration, p->declaration);
 			}
-			Func() = default;
-			Func(std::unique_ptr<Identifier> returnType, std::unique_ptr<Identifier> name, std::unique_ptr<CodeBlock> code, bool onlyDeclaration) :
-				returnType(std::move(returnType)), name(std::move(name)), code(std::move(code)), onlyDeclaration(onlyDeclaration) {}
 		};
 
 		struct NumberExpr : Node {
@@ -202,6 +229,7 @@ namespace shader_precompiler::ast {
 				return ident(nesting) + std::to_string(value);
 			}
 
+		protected:
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const NumberExpr*>(&other))
 					return value == p->value;
@@ -217,9 +245,12 @@ namespace shader_precompiler::ast {
 
 		std::unique_ptr<nodes::Node> parseExpression(std::unique_ptr<shader_precompiler::ast::nodes::Node> left, int minPrec = 0);
 		std::unique_ptr<nodes::Node> parseSingle();
+		std::unique_ptr<nodes::Return> parseReturn();
+		std::unique_ptr<nodes::Node> parsePrimary();
 		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
 		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
 		std::unique_ptr<nodes::Node> parseDeclaration();
+		std::unique_ptr<nodes::Node> parseBrackets();
 		std::unique_ptr<nodes::CodeBlock> parseCodeBlock();
 
 		inline bool isType(std::string s) {
