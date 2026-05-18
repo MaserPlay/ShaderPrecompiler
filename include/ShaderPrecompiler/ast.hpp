@@ -43,6 +43,21 @@ namespace shader_precompiler::ast {
 					return ident(nesting) + "NULL";
 				}
 			}
+
+			template<class T>
+			inline static bool vectorEquals(const std::vector<std::unique_ptr<T>>& a,
+				const std::vector<std::unique_ptr<T>>& b) {
+				static_assert(std::is_base_of_v<Node, T>);
+
+				if (a.size() != b.size())
+					return false;
+
+				for (size_t i = 0; i < a.size(); ++i) {
+					if (!nodeEq(a[i], b[i]))
+						return false;
+				}
+				return true;
+			}
 		};
 
 		struct CodeBlock : Node {
@@ -68,15 +83,7 @@ namespace shader_precompiler::ast {
 				auto p = dynamic_cast<const CodeBlock*>(&other);
 				if (!p) return false;
 
-				if (expressions.size() != p->expressions.size())
-					return false;
-
-				for (size_t i = 0; i < expressions.size(); ++i) {
-					if (!nodeEq(expressions[i], p->expressions[i]))
-						return false;
-				}
-
-				return true;
+				return vectorEquals(expressions, p->expressions);
 			}
 		};
 
@@ -195,9 +202,46 @@ namespace shader_precompiler::ast {
 				if (!p) return false;
 
 				return nodeEq(name, p->name) &&
-					nodeEq(returnType, p->returnType);
+					nodeEq(returnType, p->returnType) &&
+					vectorEquals(params, p->params);
 			}
 		};
+
+		struct FuncCall : Node {
+			std::unique_ptr<Identifier> name;
+			std::vector<std::unique_ptr< Node>> params;
+
+			std::string toDebugString(std::size_t nesting) const override {
+				std::string final = ident(nesting) + "FuncCall:\n";
+				final += unique_ptr_to_debug_string(name, nesting + 1) + '\n';
+
+				final += ident(nesting + 1) + "PARAMS:\n";
+				for (auto& e : params)
+				{
+					if (e) {
+						final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
+					}
+				}
+				if (params.empty()) {
+					final += ident(nesting + 1) + "PARAMS_EMPTY\n";
+				}
+
+				return final;
+			}
+
+			FuncCall() = default;
+			FuncCall(std::unique_ptr<Identifier> name, std::vector<std::unique_ptr< Node>> params) :
+				name(std::move(name)), params(std::move(params)) {}
+		protected:
+			bool equals(const Node& other) const override {
+				auto p = dynamic_cast<const FuncCall*>(&other);
+				if (!p) return false;
+
+				return nodeEq(name, p->name) &&
+					vectorEquals(params, p->params);
+			}
+		};
+
 		struct Func : Node {
 			std::unique_ptr<FuncDeclaration> declaration;
 			std::unique_ptr<CodeBlock> code;
@@ -247,6 +291,7 @@ namespace shader_precompiler::ast {
 		std::unique_ptr<nodes::Node> parseSingle();
 		std::unique_ptr<nodes::Return> parseReturn();
 		std::unique_ptr<nodes::Node> parsePrimary();
+		std::unique_ptr<nodes::Node> parseFunctionCall(std::unique_ptr<nodes::Identifier> name);
 		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
 		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
 		std::unique_ptr<nodes::Node> parseDeclaration();

@@ -188,7 +188,6 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 			isType(firstToken->text)) {
 		}
 		else {
-			//printError(ErrorCodes::FUNCTION_PARAM_WHERE_IS_TYPE, "Type " + firstToken->toDebugString(), *firstToken);
 			break;
 		}
 
@@ -280,9 +279,62 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	if (auto curr = parseSingle())
 	{
-		return (std::move(curr));
+		if (auto id = dynamic_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(std::move(curr)); id != NULL) {
+			return parseFunctionCall(std::move(id));
+		}
+		else {
+			return std::move(curr);
+		}
 	}
 	return NULL;
+}
+std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseFunctionCall(std::unique_ptr<shader_precompiler::ast::nodes::Identifier> name) {
+
+	if (!name) return NULL;
+
+	auto nextToken = from.peek();
+
+	auto func = std::make_unique<shader_precompiler::ast::nodes::FuncCall>();
+
+	if (!nextToken || *nextToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, "(")) {
+		return (name);
+	}
+	from.get();
+	func->name = std::move(name);
+
+	while (true) {
+		auto firstToken = from.peek();
+
+		if (firstToken) {
+		}
+		else {
+			break;
+		}
+
+		auto first = parseSingle();
+
+		func->params.push_back(std::move(first));
+
+		auto commaToken = from.peek();
+		if (!(commaToken && commaToken->type == shader_precompiler::lexer::Token::Type::Symbol &&
+			commaToken->text == ",")) {
+			break;
+		}
+		from.get();
+	}
+
+	auto bracketToken = from.peek();
+	if (!bracketToken || *bracketToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, ")")) {
+		if (bracketToken) {
+			printError(ErrorCodes::WHERE_IS, "WHERE IS ) Next token: " + bracketToken->toDebugString(), *bracketToken);
+		}
+		else {
+			printError(ErrorCodes::WHERE_IS, "WHERE IS ) Next token: EMPTY", *nextToken);
+		}
+	}
+	from.get();
+
+	return func;
 }
 std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseExpression(std::unique_ptr<shader_precompiler::ast::nodes::Node> left_, int minPrec) {
 

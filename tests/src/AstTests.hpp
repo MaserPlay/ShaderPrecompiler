@@ -98,7 +98,7 @@ TEST(AstTests, EmptyFunc) {
 }
 
 TEST(AstTests, PlusFunc) {
-	auto tree = processAst("int plus(int one, int two){ return one+two; }");
+	auto tree = processAst("int plus(int one, int two){ return one+two; }plus(1,2);");
 
 
 	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
@@ -128,6 +128,15 @@ TEST(AstTests, PlusFunc) {
 						)
 					)
 				)
+			)
+		)
+	);
+	rightTree->expressions.push_back(
+		std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+			std::make_unique< shader_precompiler::ast::nodes::Identifier>("plus"),
+			makeVector< shader_precompiler::ast::nodes::Node>(
+				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(1),
+				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2)
 			)
 		)
 	);
