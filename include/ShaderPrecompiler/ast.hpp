@@ -17,6 +17,11 @@ namespace shader_precompiler::ast {
 				static_assert(std::is_base_of_v<Node, N>);
 				return this->equals(b);
 			}
+			template<class N>
+			inline bool operator!=(const N& b) const {
+				static_assert(std::is_base_of_v<Node, N>);
+				return !this->equals(b);
+			}
 		protected:
 			virtual bool equals(const Node& other) const = 0;
 			inline static std::string ident(const std::size_t nesting) {
@@ -119,13 +124,46 @@ namespace shader_precompiler::ast {
 			}
 		};
 
+		struct Attribute : Node {
+			std::unique_ptr<Node> value;
+			Attribute() = default;
+			Attribute(std::unique_ptr<Node> value) : value(std::move(value)) {}
+			std::string toDebugString(std::size_t nesting) const override {
+				std::string final = ident(nesting) + "Attribute:\n";
+				final += unique_ptr_to_debug_string(value, nesting + 1) + '\n';
+				return final;
+			}
+			bool equals(const Node& other) const override {
+				if (auto p = dynamic_cast<const Attribute*>(&other))
+				{
+					return nodeEq(p->value, this->value);
+				}
+				return false;
+			}
+		};
+
 		struct VariableInitialization : Node {
 			std::unique_ptr<Identifier> type;
 			std::unique_ptr<Identifier> name;
+			std::vector<std::unique_ptr<Attribute>> attributes{};
 			VariableInitialization() = default;
+			VariableInitialization(std::unique_ptr<Identifier> type, std::unique_ptr<Identifier> name, std::vector<std::unique_ptr<Attribute>> attributes) : type(std::move(type)), name(std::move(name)), attributes(std::move(attributes)) {}
 			VariableInitialization(std::unique_ptr<Identifier> type, std::unique_ptr<Identifier> name) : type(std::move(type)), name(std::move(name)) {}
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "VariableInitialization:\n";
+
+				if (attributes.empty()) {
+					final += ident(nesting + 1) + "ATTRIBUTES_EMPTY\n";
+				}
+				else {
+					final += ident(nesting + 1) + "ATTRIBUTES:\n";
+					for (auto& e : attributes)
+					{
+						if (e) {
+							final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
+						}
+					}
+				}
 				final += unique_ptr_to_debug_string(type, nesting + 1) + '\n';
 				final += unique_ptr_to_debug_string(name, nesting + 1);
 				return final;
@@ -134,7 +172,8 @@ namespace shader_precompiler::ast {
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const VariableInitialization*>(&other))
 				{
-					return nodeEq(p->name, this->name) && nodeEq(p->type, this->type);
+					return nodeEq(p->name, this->name) && nodeEq(p->type, this->type) &&
+						vectorEquals(attributes, p->attributes);
 				}
 				return false;
 			}
@@ -201,27 +240,46 @@ namespace shader_precompiler::ast {
 		struct FuncDeclaration : Node {
 			std::unique_ptr<Identifier> name;
 			std::unique_ptr<Identifier> returnType;
-			std::vector<std::unique_ptr< VariableInitialization>> params;
+			std::vector<std::unique_ptr<VariableInitialization>> params;
+			std::vector<std::unique_ptr<Attribute>> attributes{};
 
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "FuncDeclaration:\n";
-				final += unique_ptr_to_debug_string(name, nesting + 1) + '\n';
 
-				final += ident(nesting + 1) + "PARAMS:\n";
-				for (auto& e : params)
-				{
-					if (e) {
-						final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
+				if (attributes.empty()) {
+					final += ident(nesting + 1) + "ATTRIBUTES_EMPTY\n";
+				}
+				else {
+					final += ident(nesting + 1) + "ATTRIBUTES:\n";
+					for (auto& e : attributes)
+					{
+						if (e) {
+							final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
+						}
 					}
 				}
+
+				final += unique_ptr_to_debug_string(name, nesting + 1) + '\n';
+
 				if (params.empty()) {
 					final += ident(nesting + 1) + "PARAMS_EMPTY\n";
+				}
+				else {
+					final += ident(nesting + 1) + "PARAMS:\n";
+					for (auto& e : params)
+					{
+						if (e) {
+							final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
+						}
+					}
 				}
 
 				return final;
 			}
 
 			FuncDeclaration() = default;
+			FuncDeclaration(std::unique_ptr<Identifier> returnType, std::unique_ptr<Identifier> name, std::vector<std::unique_ptr< VariableInitialization>> params, std::vector<std::unique_ptr<Attribute>> attributes) :
+				returnType(std::move(returnType)), name(std::move(name)), params(std::move(params)), attributes(std::move(attributes)) {}
 			FuncDeclaration(std::unique_ptr<Identifier> returnType, std::unique_ptr<Identifier> name, std::vector<std::unique_ptr< VariableInitialization>> params) :
 				returnType(std::move(returnType)), name(std::move(name)), params(std::move(params)) {}
 		protected:
@@ -231,7 +289,8 @@ namespace shader_precompiler::ast {
 
 				return nodeEq(name, p->name) &&
 					nodeEq(returnType, p->returnType) &&
-					vectorEquals(params, p->params);
+					vectorEquals(params, p->params) &&
+					vectorEquals(attributes, p->attributes);
 			}
 		};
 
@@ -320,10 +379,11 @@ namespace shader_precompiler::ast {
 		std::unique_ptr<nodes::Return> parseReturn();
 		std::unique_ptr<nodes::Node> parsePrimary();
 		std::unique_ptr<nodes::Node> parseIfElse();
+		std::unique_ptr<nodes::Attribute> parseAttributes();
 		std::unique_ptr<nodes::Node> parseFunctionCall(std::unique_ptr<nodes::Identifier> name);
-		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
-		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
-		std::unique_ptr<nodes::Node> parseDeclaration();
+		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second, std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {});
+		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second, std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {});
+		std::unique_ptr<nodes::Node> parseDeclaration(std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {});
 		std::unique_ptr<nodes::Node> parseBrackets();
 		std::unique_ptr<nodes::CodeBlock> parseCodeBlock();
 

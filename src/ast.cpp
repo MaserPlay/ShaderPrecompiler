@@ -9,7 +9,8 @@ enum class ErrorCodes {
 	UNEXPECTED_TOKEN,
 	TYPE_ALONE,
 	FUNCTION_PARAM_WHERE_IS_TYPE,
-	WHERE_IS
+	WHERE_IS,
+	NO_ATTRIBUTE_CLOSE
 };
 
 static void printError(ErrorCodes code, std::string text, shader_precompiler::lexer::Token token) {
@@ -26,7 +27,13 @@ std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 
 	while (auto first = from.peek()) {
 
-		if (auto decl = parseDeclaration())
+		std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {};
+
+		while (auto attr = parseAttributes()) {
+			attributes.push_back(std::move(attr));
+		}
+
+		if (auto decl = parseDeclaration(std::move(attributes)))
 		{
 			base->expressions.push_back(std::move(decl));
 		}
@@ -130,7 +137,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	}
 	return NULL;
 }
-std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseDeclaration() {
+std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseDeclaration(std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes) {
 
 	auto firstToken = from.peek();
 
@@ -162,21 +169,22 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	if (!thirdToken ||
 		*thirdToken == shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, ";")) {
-		return parseVariableInitialization(std::move(first), std::move(second));
+		return parseVariableInitialization(std::move(first), std::move(second), std::move(attributes));
 	}
 
 	if (thirdToken->type == shader_precompiler::lexer::Token::Type::Symbol &&
 		thirdToken->text == "(") {
-		return parseFunction(std::move(first), std::move(second));
+		return parseFunction(std::move(first), std::move(second), std::move(attributes));
 	}
 	else {
-		return parseExpression(parseVariableInitialization(std::move(first), std::move(second)));
+		return parseExpression(parseVariableInitialization(std::move(first), std::move(second), std::move(attributes)));
 	}
 }
-std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> returnType, std::unique_ptr<shader_precompiler::ast::nodes::Node> name) {
+std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> returnType, std::unique_ptr<shader_precompiler::ast::nodes::Node> name , std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes) {
 	auto funcDeclInit = std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>();
 	funcDeclInit->returnType = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(returnType);
 	funcDeclInit->name = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(name);
+	funcDeclInit->attributes = std::move(attributes);
 
 	auto nextToken = from.peek();
 
@@ -243,10 +251,11 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	return funcInit;
 }
-std::unique_ptr<shader_precompiler::ast::nodes::VariableInitialization> shader_precompiler::ast::AstParser::parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> type, std::unique_ptr<shader_precompiler::ast::nodes::Node> name) {
+std::unique_ptr<shader_precompiler::ast::nodes::VariableInitialization> shader_precompiler::ast::AstParser::parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> type, std::unique_ptr<shader_precompiler::ast::nodes::Node> name, std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes) {
 	auto varInit = std::make_unique<shader_precompiler::ast::nodes::VariableInitialization>();
 	varInit->type = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(type);
 	varInit->name = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(name);
+	varInit->attributes = std::move(attributes);
 
 	return varInit;
 }
@@ -310,7 +319,64 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	return node;
 }
+std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::ast::AstParser::parseAttributes() {
+	auto open = from.peek();
+	if (!(open &&
+		open->type == shader_precompiler::lexer::Token::Type::Symbol &&
+		open->text == "[")) {
+		return NULL;
+	}
+	from.get();
 
+	open = from.peek();
+	if (!(open &&
+		open->type == shader_precompiler::lexer::Token::Type::Symbol &&
+		open->text == "[")) {
+		return NULL;
+	}
+	from.get();
+
+	auto node = std::make_unique<shader_precompiler::ast::nodes::Attribute>();
+
+	auto value = parsePrimary();
+
+	if (auto idValue = dynamic_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(value); idValue != NULL) {
+		node->value = parseFunctionCall(std::move(idValue));
+	}
+	else {
+		node->value = std::move(value);
+	}
+
+	auto close = from.peek();
+	if (!(close &&
+		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
+		close->text == "]")) {
+		if (close) {
+			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *close);
+		}
+		else {
+			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *open);
+		}
+		return node;
+	}
+	from.get();
+
+	close = from.peek();
+	if (!(close &&
+		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
+		close->text == "]")) {
+		if (close) {
+			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *close);
+		}
+		else {
+			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *open);
+		}
+		return node;
+	}
+	from.get();
+
+	return node;
+}
 std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parsePrimary() {
 	if (auto curr = parseBrackets())
 	{

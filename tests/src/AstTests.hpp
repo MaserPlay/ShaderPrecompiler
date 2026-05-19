@@ -237,3 +237,43 @@ void ladder(int number1, int number2) {
 
 	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0) << "RIGHT:\n" << rightTree->toDebugString(0);
 }
+
+TEST(AstTests, Atrributes) {
+	auto tree = processAst("[[func(param)]] int value; [[param]] void main(){}");
+
+
+	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
+	rightTree->expressions.push_back(
+		std::make_unique<shader_precompiler::ast::nodes::VariableInitialization>(
+			std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
+			std::make_unique< shader_precompiler::ast::nodes::Identifier>("value"),
+			makeVector<shader_precompiler::ast::nodes::Attribute>(
+				std::make_unique< shader_precompiler::ast::nodes::Attribute>(
+					std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("func"),
+						makeVector< shader_precompiler::ast::nodes::Node>(
+							std::make_unique< shader_precompiler::ast::nodes::Identifier>("param")
+						)
+					)
+				)
+			)
+		)
+	);
+	rightTree->expressions.push_back(
+		std::make_unique<shader_precompiler::ast::nodes::Func>(
+			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
+				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
+				std::make_unique< shader_precompiler::ast::nodes::Identifier>("main"),
+				makeVector< shader_precompiler::ast::nodes::VariableInitialization>(),
+				makeVector<shader_precompiler::ast::nodes::Attribute>(
+					std::make_unique< shader_precompiler::ast::nodes::Attribute>(
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("param")
+					)
+				)
+			),
+			std::make_unique< shader_precompiler::ast::nodes::CodeBlock>()
+		)
+	);
+
+	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0);
+}
