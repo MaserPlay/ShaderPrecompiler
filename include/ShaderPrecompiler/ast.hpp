@@ -140,6 +140,34 @@ namespace shader_precompiler::ast {
 			}
 		};
 
+		struct IfElse : Node {
+			std::unique_ptr<Node> ifCondition;
+			std::unique_ptr<Node> thenBranch;
+			std::unique_ptr<Node> elseBranch;
+
+			std::string toDebugString(std::size_t nesting) const override {
+				std::string final = ident(nesting) + "IfElse:\n";
+
+				final += unique_ptr_to_debug_string(ifCondition, nesting + 1) + '\n';
+				final += unique_ptr_to_debug_string(thenBranch, nesting + 1) + '\n';
+				final += unique_ptr_to_debug_string(elseBranch, nesting + 1);
+
+				return final;
+			}
+			IfElse() = default;
+			IfElse(std::unique_ptr<Node> ifCondition, std::unique_ptr<Node> thenBranch, std::unique_ptr<Node> elseBranch) : ifCondition(std::move(ifCondition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {}
+
+		protected:
+			bool equals(const Node& other) const override {
+				auto p = dynamic_cast<const IfElse*>(&other);
+				if (!p) return false;
+
+				return nodeEq(ifCondition, p->ifCondition) &&
+					nodeEq(thenBranch, p->thenBranch) &&
+					nodeEq(elseBranch, p->elseBranch);
+			}
+		};
+
 		struct Operator : Node {
 			std::unique_ptr<Node> left;
 			std::string op;
@@ -291,6 +319,7 @@ namespace shader_precompiler::ast {
 		std::unique_ptr<nodes::Node> parseSingle();
 		std::unique_ptr<nodes::Return> parseReturn();
 		std::unique_ptr<nodes::Node> parsePrimary();
+		std::unique_ptr<nodes::Node> parseIfElse();
 		std::unique_ptr<nodes::Node> parseFunctionCall(std::unique_ptr<nodes::Identifier> name);
 		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);
 		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second);

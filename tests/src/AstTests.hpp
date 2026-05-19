@@ -143,3 +143,97 @@ TEST(AstTests, PlusFunc) {
 
 	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0);
 }
+
+TEST(AstTests, IfElseLadder) {
+	auto tree = processAst(R"(
+void ladder(int number1, int number2) {
+    //checks if the two integers are equal.
+    if(number1 == number2) {
+        equals(number1,number2);
+    }
+
+    //checks if number1 is greater than number2.
+    else if (number1 > number2) {
+        greater(number1, number2);
+    }
+
+    //checks if both test expressions are false
+    else {
+        less(number1, number2);
+    }
+})");
+
+
+	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
+	rightTree->expressions.push_back(
+		std::make_unique<shader_precompiler::ast::nodes::Func>(
+			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
+				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
+				std::make_unique< shader_precompiler::ast::nodes::Identifier>("ladder"),
+				makeVector< shader_precompiler::ast::nodes::VariableInitialization>(
+					std::make_unique< shader_precompiler::ast::nodes::VariableInitialization>(
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1")
+					),
+					std::make_unique< shader_precompiler::ast::nodes::VariableInitialization>(
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
+					)
+				)
+			),
+			std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
+				makeVector<shader_precompiler::ast::nodes::Node>(
+					std::make_unique<shader_precompiler::ast::nodes::IfElse>(
+						std::make_unique<shader_precompiler::ast::nodes::Operator>(
+							std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
+							"==",
+							std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
+						),
+						std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
+							makeVector<shader_precompiler::ast::nodes::Node>(
+								std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+									std::make_unique< shader_precompiler::ast::nodes::Identifier>("equals"),
+									makeVector< shader_precompiler::ast::nodes::Node>(
+										std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
+										std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
+									)
+								)
+							)
+						), 
+						std::make_unique<shader_precompiler::ast::nodes::IfElse>(
+							std::make_unique<shader_precompiler::ast::nodes::Operator>(
+								std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
+								">",
+								std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
+							),
+							std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
+								makeVector<shader_precompiler::ast::nodes::Node>(
+									std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+										std::make_unique< shader_precompiler::ast::nodes::Identifier>("greater"),
+										makeVector< shader_precompiler::ast::nodes::Node>(
+											std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
+											std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
+										)
+									)
+								)
+							),
+							std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
+								makeVector<shader_precompiler::ast::nodes::Node>(
+									std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+										std::make_unique< shader_precompiler::ast::nodes::Identifier>("less"),
+										makeVector< shader_precompiler::ast::nodes::Node>(
+											std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
+											std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
+										)
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+		)
+	);
+
+	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0) << "RIGHT:\n" << rightTree->toDebugString(0);
+}

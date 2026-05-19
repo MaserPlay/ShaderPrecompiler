@@ -14,7 +14,7 @@ static void printError(ErrorCodes code, std::string text, std::size_t line, std:
 }
 
 bool isOperator(char sym) {
-	for (char this_char : "+-*/=%&^|!?") {
+	for (char this_char : "+-*/=%&^|!?<>") {
 		if (sym == this_char) {
 			return true;
 		}
@@ -205,10 +205,19 @@ shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readSym
 }
 
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readOperator(std::string prefix) {
-	if (prefix.empty()) {
-		return createToken(Token::Type::Operator, std::string{ getChar() });
+	std::string buffer = prefix;
+
+	buffer += getChar();
+
+	while (!eof()) {
+		char c = peekChar();
+
+		if (!isOperator(c)) {
+			break;
+		}
+
+		buffer += getChar();
 	}
-	else {
-		return createToken(Token::Type::Operator, prefix);
-	}
+
+	return createToken(Token::Type::Operator, buffer);
 }
