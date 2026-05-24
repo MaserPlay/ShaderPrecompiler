@@ -1,18 +1,20 @@
 #include "../common.hpp"
 
 #include "precompiler.hpp"
+#include "diagnostic_reporters.hpp"
 #include "ast.hpp"
 
 static auto processAst(std::string base) {
+	shader_precompiler::PrintDiagnostic printDia(shader_precompiler::locales::Locales::ENGLISH);
 	std::istringstream iss(base);
 
-	shader_precompiler::lexer::LexerStream tokenStream{ iss };
+	shader_precompiler::lexer::LexerStream tokenStream( iss, printDia );
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor{ tokenStream };
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, printDia );
 
-	shader_precompiler::ast::AstParser ast{ afterPreprocessor };
+	shader_precompiler::ast::AstParser ast( afterPreprocessor, printDia );
 
-	return ast.createTree();
+	return ast.processTree();
 }
 template<class T, class... Args>
 std::vector<std::unique_ptr<T>> makeVector(Args&&... args) {

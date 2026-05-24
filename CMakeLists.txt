@@ -28,10 +28,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(argparse)
 
+FetchContent_Declare(
+	fmt
+	GIT_REPOSITORY	https://github.com/fmtlib/fmt.git
+	GIT_TAG 	407c905e45ad75fc29bf0f9bb7c5c2fd3475976f #tag/12.1.0
+)
+FetchContent_MakeAvailable(fmt)
+
 add_library(${PROJECT_NAME}Core STATIC
-    "src/shader_precompiler.cpp" 
+     
     "src/precompiler.cpp"
- "src/utils/string_utils.cpp" "src/lexer.cpp" "src/ast.cpp")
+ "src/utils/string_utils.cpp" "src/lexer.cpp" "src/ast.cpp" "src/minimazer.cpp" "src/messages.cpp" "src/diagnostic_reporters.cpp")
 
 add_library(${PROJECT_NAME}::Core ALIAS ${PROJECT_NAME}Core)
 
@@ -51,7 +58,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     APPNAME="${PROJECT_NAME}"
     APPAUTHOR="MaserPlay"
 )
-
+target_link_libraries(${PROJECT_NAME}Core PUBLIC fmt::fmt)
 target_link_libraries(${PROJECT_NAME} PUBLIC argparse ${PROJECT_NAME}::Core)
 
 if (BUILD_TESTS)

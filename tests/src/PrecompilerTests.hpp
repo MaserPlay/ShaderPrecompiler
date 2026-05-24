@@ -3,13 +3,15 @@
 #include <vector>
 
 #include "precompiler.hpp"
+#include "diagnostic_reporters.hpp"
 
 static std::vector<shader_precompiler::lexer::Token> processPrecompiler(std::string base) {
 	std::istringstream iss(base);   // создаём поток из строки
+	shader_precompiler::PrintDiagnostic printDia(shader_precompiler::locales::Locales::ENGLISH);
 
-	shader_precompiler::lexer::LexerStream tokenStream{ iss };
+	shader_precompiler::lexer::LexerStream tokenStream( iss, printDia );
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor{ tokenStream };
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, printDia );
 
 	std::vector<shader_precompiler::lexer::Token> outputVector{};
 
@@ -34,9 +36,9 @@ TEST(PrecompilerTests, SimplyExpression) {
 	EXPECT_TEXT(tokens[1], "=")
 	EXPECT_TEXT(tokens[2], "2")
 
-	EXPECT_TYPE(tokens[0], Token::Type::Identifier)
-	EXPECT_TYPE(tokens[1], Token::Type::Operator)
-	EXPECT_TYPE(tokens[2], Token::Type::Number)
+	EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
+	EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Operator)
+	EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Number)
 }
 
 TEST(PrecompilerTests, PreserveSimpleCode)

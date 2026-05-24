@@ -1,13 +1,13 @@
 #include "../common.hpp"
 
 #include "lexer.hpp"
+#include "diagnostic_reporters.hpp"
 
-using namespace shader_precompiler::lexer;
-
-static std::vector<Token> processLexer(std::string input) {
+static std::vector<shader_precompiler::lexer::Token> processLexer(std::string input) {
+    shader_precompiler::PrintDiagnostic printDia(shader_precompiler::locales::Locales::ENGLISH);
     std::istringstream iss(input);   // создаём поток из строки
-    std::vector<Token> outputVector{};
-    auto stream = LexerStream(iss);
+    std::vector<shader_precompiler::lexer::Token> outputVector{};
+    auto stream = shader_precompiler::lexer::LexerStream(iss, printDia);
 
     while (auto next = stream.get()) {
         outputVector.push_back(*next);
@@ -28,7 +28,7 @@ TEST(Lexer, Identifier)
     ASSERT_SIZE(tokens, 1)
 
     EXPECT_TEXT(tokens[0], "hello")
-    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
 }
 
 TEST(Lexer, MultipleIdentifiers)
@@ -40,8 +40,8 @@ TEST(Lexer, MultipleIdentifiers)
     EXPECT_TEXT(tokens[0], "hello")
     EXPECT_TEXT(tokens[1], "world")
 
-    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Identifier)
 }
 TEST(Lexer, Comment)
 {
@@ -63,7 +63,7 @@ TEST(Lexer, Number)
     ASSERT_SIZE(tokens, 1)
 
     EXPECT_TEXT(tokens[0], "123")
-    EXPECT_TYPE(tokens[0], Token::Type::Number)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Number)
 }
 
 TEST(Lexer, FloatNumber)
@@ -73,7 +73,7 @@ TEST(Lexer, FloatNumber)
     ASSERT_SIZE(tokens, 1)
 
     EXPECT_TEXT(tokens[0], "1.5")
-    EXPECT_TYPE(tokens[0], Token::Type::Number)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Number)
 }
 
 TEST(Lexer, NumberWithMultipleDotsBug)
@@ -83,7 +83,7 @@ TEST(Lexer, NumberWithMultipleDotsBug)
     ASSERT_SIZE(tokens, 11)
 
     EXPECT_TEXT(tokens[0], "1.52")
-    EXPECT_TYPE(tokens[0], Token::Type::Number)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Number)
 }
 
 TEST(Lexer, Symbol)
@@ -93,7 +93,7 @@ TEST(Lexer, Symbol)
     ASSERT_SIZE(tokens, 1)
 
     EXPECT_TEXT(tokens[0], "{")
-    EXPECT_TYPE(tokens[0], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Symbol)
 }
 
 TEST(Lexer, MultipleSymbols)
@@ -106,7 +106,7 @@ TEST(Lexer, MultipleSymbols)
     for (std::size_t i = 0; i < sourceString.size(); i++)
     {
         EXPECT_EQ(tokens[i].text[0], sourceString[i]) << ::testing::PrintToString(tokens[i].toDebugString());
-        EXPECT_EQ(tokens[i].type, Token::Type::Symbol) << ::testing::PrintToString(tokens[i].toDebugString());
+        EXPECT_EQ(tokens[i].type, shader_precompiler::lexer::Token::Type::Symbol) << ::testing::PrintToString(tokens[i].toDebugString());
     }
 }
 
@@ -117,7 +117,7 @@ TEST(Lexer, Operator)
     ASSERT_SIZE(tokens, 1)
 
     EXPECT_TEXT(tokens[0], "=")
-    EXPECT_TYPE(tokens[0], Token::Type::Operator)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Operator)
 }
 
 TEST(Lexer, SimplyExpression) {
@@ -129,9 +129,9 @@ TEST(Lexer, SimplyExpression) {
     EXPECT_TEXT(tokens[1], "=")
     EXPECT_TEXT(tokens[2], "2")
 
-    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[1], Token::Type::Operator)
-    EXPECT_TYPE(tokens[2], Token::Type::Number)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Operator)
+    EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Number)
 }
 
 TEST(Lexer, ComplexExpression)
@@ -149,14 +149,14 @@ TEST(Lexer, ComplexExpression)
     EXPECT_TEXT(tokens[6], ")")
     EXPECT_TEXT(tokens[7], ";")
 
-    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[2], Token::Type::Operator)
-    EXPECT_TYPE(tokens[3], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[4], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[5], Token::Type::Number)
-    EXPECT_TYPE(tokens[6], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[7], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Operator)
+    EXPECT_TYPE(tokens[3], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[4], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[5], shader_precompiler::lexer::Token::Type::Number)
+    EXPECT_TYPE(tokens[6], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[7], shader_precompiler::lexer::Token::Type::Symbol)
 }
 
 TEST(Lexer, Directive)
@@ -166,7 +166,7 @@ TEST(Lexer, Directive)
     ASSERT_SIZE(tokens, 1)
 
     EXPECT_TEXT(tokens[0], "#ifdef")
-    EXPECT_TYPE(tokens[0], Token::Type::Directive)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Directive)
 }
 
 TEST(Lexer, IfdefBlock)
@@ -182,8 +182,8 @@ TEST(Lexer, IfdefBlock)
     EXPECT_TEXT(tokens[0], "#ifdef")
     EXPECT_TEXT(tokens[1], "LIGHTING")
 
-    EXPECT_TYPE(tokens[0], Token::Type::Directive)
-    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Directive)
+    EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Identifier)
 }
 
 TEST(Lexer, IgnoreWhitespace)
@@ -221,7 +221,7 @@ TEST(Lexer, ShaderExample)
     ASSERT_SIZE(tokens, 14)
 
     EXPECT_TEXT(tokens[0], "#version")
-    EXPECT_TYPE(tokens[0], Token::Type::Directive)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Directive)
 }
 
 TEST(Lexer, FloatNumberStartDot)
@@ -233,19 +233,19 @@ TEST(Lexer, FloatNumberStartDot)
     ASSERT_SIZE(tokens, 5)
 
     EXPECT_TEXT(tokens[0], "double")
-    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
 
     EXPECT_TEXT(tokens[1], "a")
-    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Identifier)
 
     EXPECT_TEXT(tokens[2], "=")
-    EXPECT_TYPE(tokens[2], Token::Type::Operator)
+    EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Operator)
 
     EXPECT_TEXT(tokens[3], ".1")
-    EXPECT_TYPE(tokens[3], Token::Type::Number)
+    EXPECT_TYPE(tokens[3], shader_precompiler::lexer::Token::Type::Number)
 
     EXPECT_TEXT(tokens[4], ";")
-    EXPECT_TYPE(tokens[4], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[4], shader_precompiler::lexer::Token::Type::Symbol)
 }
 
 TEST(Lexer, FunctionCallWithClassAndArguments)
@@ -271,18 +271,18 @@ TEST(Lexer, FunctionCallWithClassAndArguments)
     EXPECT_TEXT(tokens[12], ")")
     EXPECT_TEXT(tokens[13], ";")
 
-    EXPECT_TYPE(tokens[0], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[1], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[2], Token::Type::Operator)
-    EXPECT_TYPE(tokens[3], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[4], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[5], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[6], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[7], Token::Type::Number)
-    EXPECT_TYPE(tokens[8], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[9], Token::Type::String)
-    EXPECT_TYPE(tokens[10], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[11], Token::Type::Identifier)
-    EXPECT_TYPE(tokens[12], Token::Type::Symbol)
-    EXPECT_TYPE(tokens[13], Token::Type::Symbol)
+    EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Operator)
+    EXPECT_TYPE(tokens[3], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[4], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[5], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[6], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[7], shader_precompiler::lexer::Token::Type::Number)
+    EXPECT_TYPE(tokens[8], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[9], shader_precompiler::lexer::Token::Type::String)
+    EXPECT_TYPE(tokens[10], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[11], shader_precompiler::lexer::Token::Type::Identifier)
+    EXPECT_TYPE(tokens[12], shader_precompiler::lexer::Token::Type::Symbol)
+    EXPECT_TYPE(tokens[13], shader_precompiler::lexer::Token::Type::Symbol)
 }

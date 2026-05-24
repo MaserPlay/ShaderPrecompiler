@@ -11,6 +11,7 @@ namespace shader_precompiler::precompiler {
 
 	class PrecompilerLexerStream : public shader_precompiler::lexer::BaseLexerStream {
 		BaseLexerStream& from;
+		IDiagnosticReporter& reporter;
 
 		std::optional<shader_precompiler::lexer::Token> next() override;
 		std::map<std::string, std::vector<shader_precompiler::lexer::Token>> defines;
@@ -27,9 +28,11 @@ namespace shader_precompiler::precompiler {
 		void handleDirective(const shader_precompiler::lexer::Token& tok);
 		inline bool needSkipCode() { return deleteNestedIfDefs != 0; }
 
+		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::PREPROCESSOR)
+
 	public:
-		explicit PrecompilerLexerStream(BaseLexerStream& from) : from(from), defines({}), 
-			numNestedIfdef(0), deleteNestedIfDefs(0) {}
+		explicit PrecompilerLexerStream(BaseLexerStream& from, IDiagnosticReporter& reporter) : from(from), defines({}),
+			numNestedIfdef(0), deleteNestedIfDefs(0), reporter(reporter) {}
 
 		inline bool eof() override {
 			return from.eof();

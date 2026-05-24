@@ -6,20 +6,6 @@
 #include <string>
 
 #include "utils/string_utils.hpp"
-#include "print_error.hpp"
-
-enum class ErrorCodes {
-	DIRECTIVE_NOT_FOUND,
-	WARNING_STATEMENT,
-	UNEXPECTED_DIRECTIVE_NAME,
-	REPLACING_DEFINE_TO_NONE
-};
-
-static void printError(ErrorCodes code, std::string text, shader_precompiler::lexer::Token token) {
-	shader_precompiler::setError(shader_precompiler::Error{
-		shader_precompiler::Error::Stage::PREPROCESSOR, (std::size_t)code, text, token.line, token.column
-		});
-}
 
 std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler::PrecompilerLexerStream::next() {
 
@@ -70,8 +56,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 			{
 				auto defineSize = defines.at(lastToken->text).size();
 				if (defineSize == 0) {
-					printError(ErrorCodes::REPLACING_DEFINE_TO_NONE, "Warning: deleting " + lastToken->text + " by #define", 
-						*lastToken);
+					printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE, shader_precompiler::Error::make_store(lastToken->text), *lastToken);
 				}
 				else if (defineSize >= 2) {
 					insertDefine = InsertDefine{};
@@ -112,21 +97,33 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 			numNestedIfdef--;
 		}
 		return;
-	} else if (directiveToken.text == "#warning") {
+	}
+	else {
+		for (auto& str : { "#warning", "#info", "#error", "#fatal" })
+		{
+			if (directiveToken.text == str) {
+				std::string buffer{};
+				auto nextToken = from.peek();
 
-		std::string buffer{};
-		auto nextToken = from.peek();
+				while (nextToken &&
+					nextToken->type != shader_precompiler::lexer::Token::Type::NewLine) {
+					from.get();
+					buffer += nextToken->text + " ";
+					nextToken = from.peek();
+				}
 
-		while (nextToken &&
-			nextToken->type != shader_precompiler::lexer::Token::Type::NewLine) {
-			from.get();
-			buffer += nextToken->text + " ";
-			nextToken = from.peek();
+				shader_precompiler::Error::Level level;
+				switch (str[1]) {
+				case 'w': level = shader_precompiler::Error::Level::WARNING; break;
+				case 'i': level = shader_precompiler::Error::Level::INFO; break;
+				case 'e': level = shader_precompiler::Error::Level::ERROR; break;
+				case 'f': level = shader_precompiler::Error::Level::FATAL; break;
+				}
+
+				printError(level, shader_precompiler::Error::ErrorCodes::LEVEL_DIRECTIVE, shader_precompiler::Error::make_store(buffer), *nextToken);
+				return;
+			}
 		}
-
-		printError(ErrorCodes::WARNING_STATEMENT, "Warning: " +
-			buffer, directiveToken);
-		return;
 	}
 
 	auto macro = from.get();
@@ -152,8 +149,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 					{
 						auto defineSize = defines.at(nextToken->text).size();
 						if (defineSize == 0) {
-							printError(ErrorCodes::REPLACING_DEFINE_TO_NONE, "Warning: deleting " + nextToken->text + " by #define",
-								*nextToken);
+							printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE, shader_precompiler::Error::make_store(nextToken->text), *nextToken);
 						}
 						else {
 							for (auto& i : defines.at(nextToken->text)) {
@@ -248,13 +244,12 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 			}
 		}
 		else {
-			printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected macro name: unexpected token " +
-				macro->text, *macro);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::UNEXPECTED_MACRO_NAME, shader_precompiler::Error::make_store(macro->text), *macro);
 		}
 	}
 	else {
-		printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected macro name: No next token.", directiveToken);
+		printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_DIRECTIVE_NAME, shader_precompiler::Error::make_store(), directiveToken);
 	}
 
-	printError(ErrorCodes::UNEXPECTED_DIRECTIVE_NAME, "Unexpected directive name " + directiveToken.text, directiveToken);
+	printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::UNEXPECTED_DIRECTIVE, shader_precompiler::Error::make_store(directiveToken.text), directiveToken);
 }

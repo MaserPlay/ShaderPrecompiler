@@ -9,6 +9,7 @@
 #include "lexer.hpp"
 #include "precompiler.hpp"
 #include "utils/string_utils.hpp"
+#include "messages.hpp"
 
 #define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
 

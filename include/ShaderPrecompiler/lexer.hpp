@@ -6,6 +6,8 @@
 #include <vector>
 #include <optional>
 
+#include "shader_precompiler.hpp"
+
 namespace shader_precompiler::lexer {
 	struct Token
 	{
@@ -101,6 +103,11 @@ namespace shader_precompiler::lexer {
 	class BaseLexerStream {
 		std::optional<Token> lookahead{ std::nullopt };
 		virtual std::optional<Token> next() = 0;
+
+		static bool saveToStream$needSpaceBetween(Token::Type t) {
+			return t == Token::Type::Identifier ||
+				t == Token::Type::Number;
+		}
 	public:
 		BaseLexerStream() = default;
 		BaseLexerStream(const BaseLexerStream&) = delete; // No delete
@@ -124,11 +131,6 @@ namespace shader_precompiler::lexer {
 			}
 		}
 
-		static bool saveToStream$needSpaceBetween(Token::Type t) {
-			return t == Token::Type::Identifier ||
-				t == Token::Type::Number;
-		}
-
 		inline void saveToStream(std::ostream& stream) {
 			Token::Type lastType = (Token::Type) -1;
 			while (auto next = this->get()) {
@@ -147,8 +149,13 @@ namespace shader_precompiler::lexer {
 		std::size_t line;
 		std::size_t column;
 		std::optional<Token> next() override;
+
+		IDiagnosticReporter& reporter;
+
+
+		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::LEXER)
 	public:
-		explicit LexerStream(std::istream& input) : input(input), line(0), column(0) {}
+		explicit LexerStream(std::istream& input, IDiagnosticReporter& reporter) : input(input), line(0), column(0), reporter(reporter) {}
 	private:
 		inline bool eof() override {
 			return input.eof();

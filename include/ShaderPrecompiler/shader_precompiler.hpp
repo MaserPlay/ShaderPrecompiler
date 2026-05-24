@@ -3,6 +3,8 @@
 #include <string>
 #include <functional>
 
+#include <fmt/args.h>
+
 namespace shader_precompiler {
 
 	enum class ShaderLanguages {
@@ -13,11 +15,36 @@ namespace shader_precompiler {
 
 	struct Error
 	{
+		enum class ErrorCodes {
+			// LEXER
+			UNEXPECTED_CHAR = 1000,
+
+			//PRECOMPILER
+			DELETING_BY_DEFINE = 2000,
+			LEVEL_DIRECTIVE,
+			UNEXPECTED_DIRECTIVE,
+			NO_DIRECTIVE_NAME,
+			UNEXPECTED_MACRO_NAME,
+
+			//AST
+			UNEXPECTED_START_TOKEN = 3000,
+			NO_CLOSE_ATTRIBUTE_TOKEN,
+			NO_CLOSE_BRACKET_TOKEN,
+			TYPE_ALONE
+		};
+
 		enum class Stage
 		{
-			LEXER,
 			PREPROCESSOR,
+			LEXER,
 			AST,
+			MINIMAZER
+		};
+		enum class Level {
+			INFO,
+			WARNING,
+			ERROR,
+			FATAL
 		};
 		static char stageToLetter(const Stage& stage) {
 			switch (stage) {
@@ -27,20 +54,73 @@ namespace shader_precompiler {
 					return 'L';
 				case Stage::AST:
 					return 'A';
+				case Stage::MINIMAZER:
+					return 'M';
 				default:
 					return 'NOT';
 			}
 		}
+		static char levelToLetter(const Level& stage) {
+			switch (stage) {
+			case Level::INFO:
+				return 'I';
+			case Level::WARNING:
+				return 'W';
+			case Level::ERROR:
+				return 'E';
+			case Level::FATAL:
+				return 'F';
+			default:
+				return 'NOT';
+			}
+		}
+		static std::string levelToString(const Level& stage) {
+			switch (stage) {
+			case Level::INFO:
+				return "INFO";
+			case Level::WARNING:
+				return "WARNING";
+			case Level::ERROR:
+				return "ERROR";
+			case Level::FATAL:
+				return "FATAL";
+			default:
+				return "NOT";
+			}
+		}
 		Stage stage{};
-		std::size_t code{};
-		std::string text{};
+		Level level{};
+		ErrorCodes code{};
+
+		::fmt::dynamic_format_arg_store<fmt::format_context> args{};
+
+		template<typename... Args>
+		static inline auto make_store(Args&&... args) {
+			fmt::dynamic_format_arg_store<fmt::format_context> store;
+			(store.push_back(args), ...);
+			return store;
+		}
 
 		std::size_t line{};
 		std::size_t column{};
+
 		Error() = default;
-		Error(Stage stage, std::size_t code, std::string text, std::size_t line, std::size_t column) : 
-			column(column), line(line), code(code), stage(stage), text(text) {};
+		Error(Level level, Stage stage, ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, std::size_t line, std::size_t column) :
+			column(column), line(line), code(code), stage(stage), args(std::move(args)), level(level) {};
+
+#define PRINT_ERROR_DEFINE(STAGE) inline void printError(shader_precompiler::Error::Level level, shader_precompiler::Error::ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, shader_precompiler::lexer::Token token) { \
+		reporter.report(shader_precompiler::Error{ \
+			level, STAGE, code, std::move(args), token.line, token.column \
+			}); \
+		}
 	};
 
-	void setErrorOutput(std::function<void(const Error& error)>);
+	class IDiagnosticReporter {
+	public:
+		virtual ~IDiagnosticReporter() = default;
+
+		virtual void report(const Error& error) = 0;
+
+		virtual bool hasErrors() const = 0;
+	};
 };

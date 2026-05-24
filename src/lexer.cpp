@@ -1,17 +1,6 @@
 #include "lexer.hpp"
-#include "print_error.hpp"
 
 #include <cctype>
-
-enum class ErrorCodes {
-	UNEXPECTED_TOKEN
-};
-
-static void printError(ErrorCodes code, std::string text, std::size_t line, std::size_t column) {
-	shader_precompiler::setError(shader_precompiler::Error{
-		shader_precompiler::Error::Stage::LEXER, (std::size_t)code, text, line, column
-		});
-}
 
 bool isOperator(char sym) {
 	for (char this_char : "+-*/=%&^|!?<>") {
@@ -87,8 +76,12 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 	if (isOperator(nextChar)) return readOperator();
 	if (isIdentifier(nextChar)) return readIdentifier();
 
-	printError(ErrorCodes::UNEXPECTED_TOKEN, std::string{nextChar} + " UNEXPECTED_TOKEN", line, column);
-	return createToken((Token::Type) -1 , std::string{ getChar() });
+
+	shader_precompiler::lexer::Token error( (shader_precompiler::lexer::Token::Type) - 1, std::string{ getChar() }, line, column );
+
+	printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_CHAR, shader_precompiler::Error::make_store(nextChar), error);
+
+	return error;
 }
 
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readCommentStartSlash() {

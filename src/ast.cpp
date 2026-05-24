@@ -2,24 +2,9 @@
 
 #include <limits>
 
-#include "print_error.hpp"
 #include "utils/unique_ptr_casts.hpp"
 
-enum class ErrorCodes {
-	UNEXPECTED_TOKEN,
-	TYPE_ALONE,
-	FUNCTION_PARAM_WHERE_IS_TYPE,
-	WHERE_IS,
-	NO_ATTRIBUTE_CLOSE
-};
-
-static void printError(ErrorCodes code, std::string text, shader_precompiler::lexer::Token token) {
-	shader_precompiler::setError(shader_precompiler::Error{
-		shader_precompiler::Error::Stage::AST, (std::size_t)code, text, token.line, token.column
-		});
-}
-
-std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::ast::AstParser::createTree() {
+std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::ast::AstParser::processTree() {
 	if (base != NULL) {
 		return base;
 	}
@@ -43,7 +28,7 @@ std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 		}
 		else
 		{
-			printError(ErrorCodes::UNEXPECTED_TOKEN, "Unexpected token " + first->toDebugString(), *from.get());
+			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(first->toDebugString()), *from.get());
 		}
 	}
 
@@ -98,7 +83,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 			block->expressions.push_back(std::move(stmt));
 		}
 		else {
-			printError(ErrorCodes::UNEXPECTED_TOKEN, "Unexpected token: " + next->toDebugString(), *next);
+			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(next->toDebugString()), *next);
 			from.get();
 		}
 	}
@@ -153,12 +138,12 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	if (!secondToken ||
 		secondToken->type != shader_precompiler::lexer::Token::Type::Identifier ||
-		isType(secondToken->text)) { // TODO: PrintError
+		isType(secondToken->text)) {
 		if (secondToken) {
-			printError(ErrorCodes::TYPE_ALONE, "Type " + firstToken->toDebugString() + " alone. Next token: " + secondToken->toDebugString(), *secondToken);
+			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *secondToken);
 		}
 		else {
-			printError(ErrorCodes::TYPE_ALONE, "Type " + firstToken->toDebugString() + " alone. Next token: EMPTY", *firstToken);
+			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *firstToken);
 		}
 		return NULL;
 	}
@@ -211,7 +196,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 			!isType(secondToken->text)) {
 		}
 		else {
-			printError(ErrorCodes::TYPE_ALONE, "Type " + firstToken->toDebugString() + " alone.", *firstToken);
+			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *firstToken);
 			return funcDeclInit;
 		}
 
@@ -230,10 +215,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto bracketToken = from.peek();
 	if (!bracketToken || *bracketToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, ")")) {
 		if (bracketToken) {
-			printError(ErrorCodes::WHERE_IS, "WHERE IS ) Next token: " + bracketToken->toDebugString(), *bracketToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *bracketToken);
 		}
 		else {
-			printError(ErrorCodes::WHERE_IS, "WHERE IS ) Next token: EMPTY", *nextToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *nextToken);
 		}
 	}
 	from.get();
@@ -352,10 +337,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
 		close->text == "]")) {
 		if (close) {
-			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *close);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *close);
 		}
 		else {
-			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *open);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *open);
 		}
 		return node;
 	}
@@ -366,10 +351,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
 		close->text == "]")) {
 		if (close) {
-			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *close);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *close);
 		}
 		else {
-			printError(ErrorCodes::NO_ATTRIBUTE_CLOSE, "NO_ATTRIBUTE_CLOSE", *open);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *open);
 		}
 		return node;
 	}
@@ -432,10 +417,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto bracketToken = from.peek();
 	if (!bracketToken || *bracketToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, ")")) {
 		if (bracketToken) {
-			printError(ErrorCodes::WHERE_IS, "WHERE IS ) Next token: " + bracketToken->toDebugString(), *bracketToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *bracketToken);
 		}
 		else {
-			printError(ErrorCodes::WHERE_IS, "WHERE IS ) Next token: EMPTY", *nextToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *nextToken);
 		}
 	}
 	from.get();
