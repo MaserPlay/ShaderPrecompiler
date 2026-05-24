@@ -5,8 +5,38 @@
 #include <set>
 
 #include "lexer.hpp"
+#include "shader_precompiler.hpp"
 
 namespace shader_precompiler::ast {
+
+	namespace nodes {
+		class CodeBlock;
+		class Identifier;
+		class Return;
+		class Attribute;
+		class VariableInitialization;
+		class IfElse;
+		class Operator;
+		class FuncDeclaration;
+		class FuncCall;
+		class Func;
+		class NumberExpr;
+	};
+
+	class VisitorBase {
+	public:
+		virtual void visit(nodes::CodeBlock& node) = 0;
+		virtual void visit(nodes::Identifier& node) = 0;
+		virtual void visit(nodes::Return& node) = 0;
+		virtual void visit(nodes::Attribute& node) = 0;
+		virtual void visit(nodes::VariableInitialization& node) = 0;
+		virtual void visit(nodes::IfElse& node) = 0;
+		virtual void visit(nodes::Operator& node) = 0;
+		virtual void visit(nodes::FuncDeclaration& node) = 0;
+		virtual void visit(nodes::FuncCall& node) = 0;
+		virtual void visit(nodes::Func& node) = 0;
+		virtual void visit(nodes::NumberExpr& node) = 0;
+	};
 
 	namespace nodes {
 		struct Node {
@@ -22,6 +52,7 @@ namespace shader_precompiler::ast {
 				static_assert(std::is_base_of_v<Node, N>);
 				return !this->equals(b);
 			}
+			virtual void accept(VisitorBase& base) = 0;
 		protected:
 			virtual bool equals(const Node& other) const = 0;
 			inline static std::string ident(const std::size_t nesting) {
@@ -83,6 +114,10 @@ namespace shader_precompiler::ast {
 			}
 			CodeBlock() = default;
 			CodeBlock(std::vector<std::unique_ptr<Node>> expressions) : expressions(std::move(expressions)) {};
+
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const CodeBlock*>(&other);
@@ -99,6 +134,10 @@ namespace shader_precompiler::ast {
 			std::string toDebugString(std::size_t nesting) const override {
 				return ident(nesting) + name;
 			}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
+		protected:
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const Identifier*>(&other))
 					return name == p->name;
@@ -115,6 +154,10 @@ namespace shader_precompiler::ast {
 				final += unique_ptr_to_debug_string(value, nesting + 1) + '\n';
 				return final;
 			}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
+		protected:
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const Return*>(&other))
 				{
@@ -133,6 +176,10 @@ namespace shader_precompiler::ast {
 				final += unique_ptr_to_debug_string(value, nesting + 1) + '\n';
 				return final;
 			}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
+		protected:
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const Attribute*>(&other))
 				{
@@ -168,6 +215,9 @@ namespace shader_precompiler::ast {
 				final += unique_ptr_to_debug_string(name, nesting + 1);
 				return final;
 			}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				if (auto p = dynamic_cast<const VariableInitialization*>(&other))
@@ -196,6 +246,9 @@ namespace shader_precompiler::ast {
 			IfElse() = default;
 			IfElse(std::unique_ptr<Node> ifCondition, std::unique_ptr<Node> thenBranch, std::unique_ptr<Node> elseBranch) : ifCondition(std::move(ifCondition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {}
 
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const IfElse*>(&other);
@@ -226,6 +279,9 @@ namespace shader_precompiler::ast {
 			Operator(std::unique_ptr<Node> left, std::string op, std::unique_ptr<Node> right) : 
 				left(std::move(left)), right(std::move(right)), op(op) {}
 
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const Operator*>(&other);
@@ -282,6 +338,10 @@ namespace shader_precompiler::ast {
 				returnType(std::move(returnType)), name(std::move(name)), params(std::move(params)), attributes(std::move(attributes)) {}
 			FuncDeclaration(std::unique_ptr<Identifier> returnType, std::unique_ptr<Identifier> name, std::vector<std::unique_ptr< VariableInitialization>> params) :
 				returnType(std::move(returnType)), name(std::move(name)), params(std::move(params)) {}
+
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const FuncDeclaration*>(&other);
@@ -319,6 +379,9 @@ namespace shader_precompiler::ast {
 			FuncCall() = default;
 			FuncCall(std::unique_ptr<Identifier> name, std::vector<std::unique_ptr< Node>> params) :
 				name(std::move(name)), params(std::move(params)) {}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const FuncCall*>(&other);
@@ -343,6 +406,9 @@ namespace shader_precompiler::ast {
 			Func() = default;
 			Func(std::unique_ptr<FuncDeclaration> declaration, std::unique_ptr<CodeBlock> code) :
 				code(std::move(code)), declaration(std::move(declaration)) {}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 		protected:
 			bool equals(const Node& other) const override {
 				auto p = dynamic_cast<const Func*>(&other);
@@ -359,6 +425,9 @@ namespace shader_precompiler::ast {
 			std::string toDebugString(std::size_t nesting) const override {
 				return ident(nesting) + std::to_string(value);
 			}
+			void accept(VisitorBase& base) override {
+				base.visit(*this);
+			}
 
 		protected:
 			bool equals(const Node& other) const override {
@@ -369,7 +438,12 @@ namespace shader_precompiler::ast {
 		};
 	};
 
-	class AstParser {
+	class BaseAstProcessor{
+	public:
+		virtual std::shared_ptr<nodes::CodeBlock> processTree() = 0;
+	};
+
+	class AstParser : public BaseAstProcessor {
 		shader_precompiler::lexer::BaseLexerStream& from;
 		std::shared_ptr<nodes::CodeBlock> base;
 		std::set<std::string> types{ "vec3", "int", "double", "void" };
@@ -387,11 +461,15 @@ namespace shader_precompiler::ast {
 		std::unique_ptr<nodes::Node> parseBrackets();
 		std::unique_ptr<nodes::CodeBlock> parseCodeBlock();
 
+		IDiagnosticReporter& reporter;
+
+		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::AST)
+
 		inline bool isType(std::string s) {
 			return types.find(s) != end(types);
 		}
 	public:
-		AstParser(shader_precompiler::lexer::BaseLexerStream& stream) : from(stream) {}
-		std::shared_ptr<nodes::CodeBlock> createTree();
+		AstParser(shader_precompiler::lexer::BaseLexerStream& stream, IDiagnosticReporter& reporter) : from(stream), reporter(reporter) {}
+		std::shared_ptr<nodes::CodeBlock> processTree() override;
 	};
 }
