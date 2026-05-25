@@ -100,7 +100,7 @@ TEST(AstTests, EmptyFunc) {
 }
 
 TEST(AstTests, PlusFunc) {
-	auto tree = processAst("int plus(int one, int two){ return one+two; }plus(1,2);");
+	auto tree = processAst("int plus(int one, int two){ return one+two; }void main(){plus(1,2);}");
 
 
 	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
@@ -134,11 +134,22 @@ TEST(AstTests, PlusFunc) {
 		)
 	);
 	rightTree->expressions.push_back(
-		std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
-			std::make_unique< shader_precompiler::ast::nodes::Identifier>("plus"),
-			makeVector< shader_precompiler::ast::nodes::Node>(
-				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(1),
-				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2)
+		std::make_unique<shader_precompiler::ast::nodes::Func>(
+			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
+				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
+				std::make_unique< shader_precompiler::ast::nodes::Identifier>("main"),
+				makeVector< shader_precompiler::ast::nodes::VariableInitialization>()
+			),
+			std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
+				makeVector<shader_precompiler::ast::nodes::Node>(
+					std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+						std::make_unique< shader_precompiler::ast::nodes::Identifier>("plus"),
+						makeVector< shader_precompiler::ast::nodes::Node>(
+							std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(1),
+							std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2)
+						)
+					)
+				)
 			)
 		)
 	);

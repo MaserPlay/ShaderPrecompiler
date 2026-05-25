@@ -2,7 +2,6 @@
 
 #include <string>
 #include <type_traits>
-#include <set>
 
 #include "lexer.hpp"
 #include "shader_precompiler.hpp"
@@ -446,7 +445,6 @@ namespace shader_precompiler::ast {
 	class AstParser : public BaseAstProcessor {
 		shader_precompiler::lexer::BaseLexerStream& from;
 		std::shared_ptr<nodes::CodeBlock> base;
-		std::set<std::string> types{ "vec3", "int", "double", "void" };
 
 		std::unique_ptr<nodes::Node> parseExpression(std::unique_ptr<shader_precompiler::ast::nodes::Node> left, int minPrec = 0);
 		std::unique_ptr<nodes::Node> parseSingle();
@@ -464,10 +462,6 @@ namespace shader_precompiler::ast {
 		IDiagnosticReporter& reporter;
 
 		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::AST)
-
-		inline bool isType(std::string s) {
-			return types.find(s) != end(types);
-		}
 	public:
 		AstParser(shader_precompiler::lexer::BaseLexerStream& stream, IDiagnosticReporter& reporter) : from(stream), reporter(reporter) {}
 		std::shared_ptr<nodes::CodeBlock> processTree() override;

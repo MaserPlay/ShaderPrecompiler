@@ -21,15 +21,17 @@ std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 		if (auto decl = parseDeclaration(std::move(attributes)))
 		{
 			base->expressions.push_back(std::move(decl));
+			continue;
 		}
-		else if (auto stmt = parseExpression(parsePrimary()))
+
+		if (auto stmt = parseExpression(parsePrimary()))
 		{
 			base->expressions.push_back(std::move(stmt));
+			continue;
 		}
-		else
-		{
-			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(first->toDebugString()), *from.get());
-		}
+
+		printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(first->toDebugString()), *from.get());
+		continue;
 	}
 
 	return base;
@@ -74,13 +76,13 @@ std::unique_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 		{
 			block->expressions.push_back(std::move(re));
 		}
-		else if (auto decl = parseDeclaration())
-		{
-			block->expressions.push_back(std::move(decl));
-		}
 		else if (auto stmt = parseExpression(parsePrimary()))
 		{
 			block->expressions.push_back(std::move(stmt));
+		}
+		else if (auto decl = parseDeclaration())
+		{
+			block->expressions.push_back(std::move(decl));
 		}
 		else {
 			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(next->toDebugString()), *next);
@@ -127,8 +129,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto firstToken = from.peek();
 
 	if (!firstToken ||
-		firstToken->type != shader_precompiler::lexer::Token::Type::Identifier ||
-		!isType(firstToken->text)) {
+		firstToken->type != shader_precompiler::lexer::Token::Type::Identifier) {
 		return NULL;
 	}
 
@@ -137,8 +138,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto secondToken = from.peek();
 
 	if (!secondToken ||
-		secondToken->type != shader_precompiler::lexer::Token::Type::Identifier ||
-		isType(secondToken->text)) {
+		secondToken->type != shader_precompiler::lexer::Token::Type::Identifier) {
 		if (secondToken) {
 			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *secondToken);
 		}
@@ -181,8 +181,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	while (true) {
 		auto firstToken = from.peek();
 
-		if (firstToken && firstToken->type == shader_precompiler::lexer::Token::Type::Identifier &&
-			isType(firstToken->text)) {
+		if (firstToken && firstToken->type == shader_precompiler::lexer::Token::Type::Identifier) {
 		}
 		else {
 			break;
@@ -192,8 +191,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 		auto secondToken = from.peek();
 
-		if (secondToken && secondToken->type == shader_precompiler::lexer::Token::Type::Identifier &&
-			!isType(secondToken->text)) {
+		if (secondToken && secondToken->type == shader_precompiler::lexer::Token::Type::Identifier) {
 		}
 		else {
 			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *firstToken);
