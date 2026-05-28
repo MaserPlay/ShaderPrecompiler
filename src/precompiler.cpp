@@ -56,7 +56,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 			{
 				auto defineSize = defines.at(lastToken->text).size();
 				if (defineSize == 0) {
-					printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE, shader_precompiler::Error::make_store(lastToken->text), *lastToken);
+					printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE, shader_precompiler::Error::makeStore(lastToken->text), *lastToken);
 				}
 				else if (defineSize >= 2) {
 					insertDefine = InsertDefine{};
@@ -120,7 +120,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 				case 'f': level = shader_precompiler::Error::Level::FATAL; break;
 				}
 
-				printError(level, shader_precompiler::Error::ErrorCodes::LEVEL_DIRECTIVE, shader_precompiler::Error::make_store(buffer), *nextToken);
+				printError(level, shader_precompiler::Error::ErrorCodes::LEVEL_DIRECTIVE, shader_precompiler::Error::makeStore(buffer), *nextToken);
 				return;
 			}
 		}
@@ -149,7 +149,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 					{
 						auto defineSize = defines.at(nextToken->text).size();
 						if (defineSize == 0) {
-							printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE, shader_precompiler::Error::make_store(nextToken->text), *nextToken);
+							printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE, shader_precompiler::Error::makeStore(nextToken->text), *nextToken);
 						}
 						else {
 							for (auto& i : defines.at(nextToken->text)) {
@@ -244,12 +244,12 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 			}
 		}
 		else {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::UNEXPECTED_MACRO_NAME, shader_precompiler::Error::make_store(macro->text), *macro);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::UNEXPECTED_MACRO_NAME, shader_precompiler::Error::makeStore(macro->text), *macro);
 		}
 	}
 	else {
-		printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_DIRECTIVE_NAME, shader_precompiler::Error::make_store(), directiveToken);
+		printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_DIRECTIVE_NAME, shader_precompiler::Error::makeStore(), directiveToken);
 	}
 
-	printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::UNEXPECTED_DIRECTIVE, shader_precompiler::Error::make_store(directiveToken.text), directiveToken);
+	printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::UNEXPECTED_DIRECTIVE, shader_precompiler::Error::makeStore(directiveToken.text), directiveToken);
 }

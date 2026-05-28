@@ -23,6 +23,26 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
         shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN,
         "Unexpected start token '{}'"
     },
+    {
+        shader_precompiler::Error::ErrorCodes::TYPE_ALONE,
+        "Type alone '{}'"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::UNDEFINDED_TYPE,
+        "Undefinded type '{}'"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::UNDEFINDED_VARIABLE,
+        "Undefinded variable '{}'"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::UNDEFINDED_FUNCTION,
+        "Undefinded function '{}'"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::TOKEN_IS_NULL,
+        "Token is null '{}'"
+    },
 };
 
 std::string shader_precompiler::locales::getString(shader_precompiler::locales::Locales locale, shader_precompiler::Error::ErrorCodes code) {

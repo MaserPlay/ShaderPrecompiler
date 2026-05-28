@@ -52,6 +52,9 @@ namespace shader_precompiler::ast {
 				return !this->equals(b);
 			}
 			virtual void accept(VisitorBase& base) = 0;
+
+			Location location {};
+
 		protected:
 			virtual bool equals(const Node& other) const = 0;
 			inline static std::string ident(const std::size_t nesting) {
@@ -452,7 +455,7 @@ namespace shader_precompiler::ast {
 		std::unique_ptr<nodes::Node> parsePrimary();
 		std::unique_ptr<nodes::Node> parseIfElse();
 		std::unique_ptr<nodes::Attribute> parseAttributes();
-		std::unique_ptr<nodes::Node> parseFunctionCall(std::unique_ptr<nodes::Identifier> name);
+		std::unique_ptr<nodes::Node> parseFunctionCall(std::unique_ptr<nodes::Identifier>& name);
 		std::unique_ptr<nodes::VariableInitialization> parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second, std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {});
 		std::unique_ptr<nodes::Node> parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> first, std::unique_ptr<shader_precompiler::ast::nodes::Node> second, std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {});
 		std::unique_ptr<nodes::Node> parseDeclaration(std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes = {});

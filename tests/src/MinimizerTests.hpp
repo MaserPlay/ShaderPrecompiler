@@ -1,26 +1,28 @@
 #include "../common.hpp"
 
 #include "minimazer.hpp"
-#include "diagnostic_reporters.hpp"
+#include "semantic.hpp"
 
-static auto processMinimizer(std::string base) {
-	shader_precompiler::PrintDiagnostic printDia(shader_precompiler::locales::Locales::ENGLISH);
+static auto processMinimizer(std::string base, SemanticDiagnostic& da, std::function<void(shader_precompiler::SemanticVisitor&)> actionWithSemantic = [](shader_precompiler::SemanticVisitor&) {}) {
 	std::istringstream iss(base);
 
-	shader_precompiler::lexer::LexerStream tokenStream( iss, printDia );
+	shader_precompiler::lexer::LexerStream tokenStream( iss, da);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, printDia );
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, da);
 
-	shader_precompiler::ast::AstParser ast( afterPreprocessor, printDia );
+	shader_precompiler::ast::AstParser ast( afterPreprocessor, da);
 
-	shader_precompiler::visitors::MinimazerVisitor min(ast, printDia );
+	shader_precompiler::visitors::MinimazerVisitor min(ast, da);
 
-	return min.processTree();
+	shader_precompiler::SemanticVisitor sem(min, da);
+	actionWithSemantic(sem);
+
+	return sem.processTree();
 }
 
-TEST(MinimizerTests, a) {
+TEST(MinimizerTests, MinimalCode) {
+	SemanticDiagnostic da{};
+	auto tree = processMinimizer("int ofpdsayuasdoahdsa = 1; void dosihaa8ysdgayd8s(){}", da);
 
-	//auto mini = processMinimizer("int ofpdsayuasdoahdsa = 1; void dosihaa8ysdgayd8s(){}");
-
-	//ASSERT_FALSE(true) << mini->toDebugString(0);
+	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << tree->toDebugString(0);
 }

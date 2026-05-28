@@ -79,7 +79,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 
 	shader_precompiler::lexer::Token error( (shader_precompiler::lexer::Token::Type) - 1, std::string{ getChar() }, line, column );
 
-	printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_CHAR, shader_precompiler::Error::make_store(nextChar), error);
+	printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_CHAR, shader_precompiler::Error::makeStore(nextChar), error);
 
 	return error;
 }

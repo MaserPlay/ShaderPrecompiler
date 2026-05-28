@@ -42,8 +42,7 @@ TEST(AstTests, SimplyExpression) {
 		)
 	);
 
-	*rightTree == *tree;
-	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0);
+	ASSERT_EQ_AST(*rightTree, *tree);
 }
 
 TEST(AstTests, RightOperationOrderExpression) {
@@ -69,8 +68,7 @@ TEST(AstTests, RightOperationOrderExpression) {
 		)
 	);
 
-	ASSERT_EQ(*rightTree, *tree) << "Actual: " + tree->toDebugString(0) +
-		"\nExpected: " + rightTree->toDebugString(0);
+	ASSERT_EQ_AST(*rightTree, *tree);
 }
 
 TEST(AstTests, EmptyFunc) {
@@ -96,11 +94,11 @@ TEST(AstTests, EmptyFunc) {
 		)
 	);
 
-	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0);
+	ASSERT_EQ_AST(*rightTree, *tree);
 }
 
 TEST(AstTests, PlusFunc) {
-	auto tree = processAst("int plus(int one, int two){ return one+two; }void main(){plus(1,2);}");
+	auto tree = processAst("int plus(int one, int two){ return one+two; }void main(){int p = plus(2,3);plus(1,2);}");
 
 
 	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
@@ -142,6 +140,20 @@ TEST(AstTests, PlusFunc) {
 			),
 			std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
 				makeVector<shader_precompiler::ast::nodes::Node>(
+					std::make_unique<shader_precompiler::ast::nodes::Operator>(
+						std::make_unique< shader_precompiler::ast::nodes::VariableInitialization>(
+							std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
+							std::make_unique< shader_precompiler::ast::nodes::Identifier>("p")
+						),
+						"=",
+						std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
+							std::make_unique< shader_precompiler::ast::nodes::Identifier>("plus"),
+							makeVector< shader_precompiler::ast::nodes::Node>(
+								std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2),
+								std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(3)
+							)
+						)
+					),
 					std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
 						std::make_unique< shader_precompiler::ast::nodes::Identifier>("plus"),
 						makeVector< shader_precompiler::ast::nodes::Node>(
@@ -154,7 +166,7 @@ TEST(AstTests, PlusFunc) {
 		)
 	);
 
-	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0);
+	ASSERT_EQ_AST(*rightTree, *tree);
 }
 
 TEST(AstTests, IfElseLadder) {
@@ -248,7 +260,7 @@ void ladder(int number1, int number2) {
 		)
 	);
 
-	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0) << "RIGHT:\n" << rightTree->toDebugString(0);
+	ASSERT_EQ_AST(*rightTree, *tree);
 }
 
 TEST(AstTests, Atrributes) {
@@ -288,5 +300,5 @@ TEST(AstTests, Atrributes) {
 		)
 	);
 
-	ASSERT_EQ(*rightTree, *tree) << tree->toDebugString(0);
+	ASSERT_EQ_AST(*rightTree, *tree);
 }

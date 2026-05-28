@@ -11,7 +11,5 @@ namespace shader_precompiler {
 	public:
 		PrintDiagnostic(locales::Locales locale) : locale(locale) {}
 		void report(const Error& error) override;
-
-		bool hasErrors() const override;
 	};
 };

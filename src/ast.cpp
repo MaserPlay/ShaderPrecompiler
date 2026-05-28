@@ -30,7 +30,7 @@ std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 			continue;
 		}
 
-		printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(first->toDebugString()), *from.get());
+		printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::makeStore(first->toDebugString()), *from.get());
 		continue;
 	}
 
@@ -59,6 +59,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 	from.get();
 
 	auto block = std::make_unique< shader_precompiler::ast::nodes::CodeBlock>();
+	block->location = first->location;
 
 	while (auto next = from.peek()) {
 
@@ -85,7 +86,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 			block->expressions.push_back(std::move(decl));
 		}
 		else {
-			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::make_store(next->toDebugString()), *next);
+			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::makeStore(next->toDebugString()), *next);
 			from.get();
 		}
 	}
@@ -109,20 +110,25 @@ std::unique_ptr<shader_precompiler::ast::nodes::Return> shader_precompiler::ast:
 }
 std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseSingle() {
 	auto token = from.peek();
+	std::unique_ptr<shader_precompiler::ast::nodes::Node> ret = NULL;
 
 	if (token && isSingle(token->type)) {
 		from.get();
 
 		if (token->type == shader_precompiler::lexer::Token::Type::Number) {
-			return std::make_unique<
+			ret = std::make_unique<
 				shader_precompiler::ast::nodes::NumberExpr
 			>(std::stoull(token->text));
+			ret->location = token->location;
 		}
-		return std::make_unique<
-			shader_precompiler::ast::nodes::Identifier
-		>(token->text);
+		else {
+			ret = std::make_unique<
+				shader_precompiler::ast::nodes::Identifier
+			>(token->text);
+			ret->location = token->location;
+		}
 	}
-	return NULL;
+	return ret;
 }
 std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseDeclaration(std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes) {
 
@@ -140,10 +146,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	if (!secondToken ||
 		secondToken->type != shader_precompiler::lexer::Token::Type::Identifier) {
 		if (secondToken) {
-			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *secondToken);
+			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::makeStore(firstToken->toDebugString()), *secondToken);
 		}
 		else {
-			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *firstToken);
+			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::makeStore(firstToken->toDebugString()), *firstToken);
 		}
 		return NULL;
 	}
@@ -167,6 +173,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 }
 std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseFunction(std::unique_ptr<shader_precompiler::ast::nodes::Node> returnType, std::unique_ptr<shader_precompiler::ast::nodes::Node> name , std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes) {
 	auto funcDeclInit = std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>();
+	funcDeclInit->location = returnType->location;
 	funcDeclInit->returnType = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(returnType);
 	funcDeclInit->name = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(name);
 	funcDeclInit->attributes = std::move(attributes);
@@ -194,7 +201,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 		if (secondToken && secondToken->type == shader_precompiler::lexer::Token::Type::Identifier) {
 		}
 		else {
-			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::make_store(firstToken->toDebugString()), *firstToken);
+			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::makeStore(firstToken->toDebugString()), *firstToken);
 			return funcDeclInit;
 		}
 
@@ -213,10 +220,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto bracketToken = from.peek();
 	if (!bracketToken || *bracketToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, ")")) {
 		if (bracketToken) {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *bracketToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *bracketToken);
 		}
 		else {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *nextToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *nextToken);
 		}
 	}
 	from.get();
@@ -230,12 +237,14 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto funcInit = std::make_unique<shader_precompiler::ast::nodes::Func>();
 
 	funcInit->declaration = std::move(funcDeclInit);
+	funcInit->location = code->location;
 	funcInit->code = std::move(code);
 
 	return funcInit;
 }
 std::unique_ptr<shader_precompiler::ast::nodes::VariableInitialization> shader_precompiler::ast::AstParser::parseVariableInitialization(std::unique_ptr<shader_precompiler::ast::nodes::Node> type, std::unique_ptr<shader_precompiler::ast::nodes::Node> name, std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Attribute>> attributes) {
 	auto varInit = std::make_unique<shader_precompiler::ast::nodes::VariableInitialization>();
+	varInit->location = type->location;
 	varInit->type = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(type);
 	varInit->name = static_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(name);
 	varInit->attributes = std::move(attributes);
@@ -279,6 +288,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	auto node = std::make_unique<shader_precompiler::ast::nodes::IfElse>();
 
+	node->location = ifToken->location;
 	node->ifCondition = parseBrackets();
 	node->thenBranch = parseCodeBlock();
 
@@ -321,10 +331,14 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 
 	auto node = std::make_unique<shader_precompiler::ast::nodes::Attribute>();
 
+	node->location = open->location;
 	auto value = parsePrimary();
 
 	if (auto idValue = dynamic_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(value); idValue != NULL) {
-		node->value = parseFunctionCall(std::move(idValue));
+		node->value = parseFunctionCall(idValue);
+		if (node->value == NULL) {
+			node->value = std::move(idValue);
+		}
 	}
 	else {
 		node->value = std::move(value);
@@ -335,10 +349,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
 		close->text == "]")) {
 		if (close) {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *close);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *close);
 		}
 		else {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *open);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *open);
 		}
 		return node;
 	}
@@ -349,10 +363,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
 		close->text == "]")) {
 		if (close) {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *close);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *close);
 		}
 		else {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::make_store(), *open);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *open);
 		}
 		return node;
 	}
@@ -369,7 +383,15 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	if (auto curr = parseSingle())
 	{
 		if (auto id = dynamic_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(std::move(curr)); id != NULL) {
-			return parseFunctionCall(std::move(id));
+			auto ret = parseFunctionCall(id);
+			if (ret != NULL) {
+				return ret;
+			}
+			auto next = from.peek();
+			if (next && next->type == shader_precompiler::lexer::Token::Type::Identifier) {
+				return parseVariableInitialization(std::move(id), parseSingle());
+			}
+			return id;
 		}
 		else {
 			return std::move(curr);
@@ -377,7 +399,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	}
 	return NULL;
 }
-std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseFunctionCall(std::unique_ptr<shader_precompiler::ast::nodes::Identifier> name) {
+std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parseFunctionCall(std::unique_ptr<shader_precompiler::ast::nodes::Identifier>& name) {
 
 	if (!name) return NULL;
 
@@ -386,9 +408,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto func = std::make_unique<shader_precompiler::ast::nodes::FuncCall>();
 
 	if (!nextToken || *nextToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, "(")) {
-		return (name);
+		return NULL;
 	}
 	from.get();
+	func->location = name->location;
 	func->name = std::move(name);
 
 	while (true) {
@@ -415,10 +438,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	auto bracketToken = from.peek();
 	if (!bracketToken || *bracketToken != shader_precompiler::lexer::Token(shader_precompiler::lexer::Token::Type::Symbol, ")")) {
 		if (bracketToken) {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *bracketToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *bracketToken);
 		}
 		else {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::make_store(), *nextToken);
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *nextToken);
 		}
 	}
 	from.get();
@@ -440,6 +463,9 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 		else if (op1->type != shader_precompiler::lexer::Token::Type::Operator) {
 			break;
 		}
+
+		left->location = op1->location;
+
 		auto op = op1->text;
 
 		short prec = precedence(op);

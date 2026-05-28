@@ -12,6 +12,22 @@ namespace shader_precompiler {
 		ESSL
 	};
 
+	struct Location {
+		std::size_t line{};
+		std::size_t column{};
+		Location() = default;
+		Location(std::size_t line, std::size_t column) : line(line), column(column) {}
+		std::string toString() const
+		{
+			return std::to_string(line) + ":" + std::to_string(column);
+		}
+
+		operator std::string() const
+		{
+			return toString();
+		}
+	};
+
 
 	struct Error
 	{
@@ -30,7 +46,13 @@ namespace shader_precompiler {
 			UNEXPECTED_START_TOKEN = 3000,
 			NO_CLOSE_ATTRIBUTE_TOKEN,
 			NO_CLOSE_BRACKET_TOKEN,
-			TYPE_ALONE
+			TYPE_ALONE,
+
+			//SEMANTIC
+			UNDEFINDED_TYPE = 4000,
+			UNDEFINDED_VARIABLE,
+			UNDEFINDED_FUNCTION,
+			TOKEN_IS_NULL,
 		};
 
 		enum class Stage
@@ -38,7 +60,8 @@ namespace shader_precompiler {
 			PREPROCESSOR,
 			LEXER,
 			AST,
-			MINIMAZER
+			MINIMAZER,
+			SEMANTIC_AMALIZITER
 		};
 		enum class Level {
 			INFO,
@@ -54,6 +77,8 @@ namespace shader_precompiler {
 					return 'L';
 				case Stage::AST:
 					return 'A';
+				case Stage::SEMANTIC_AMALIZITER:
+					return 'SA';
 				case Stage::MINIMAZER:
 					return 'M';
 				default:
@@ -95,23 +120,31 @@ namespace shader_precompiler {
 		::fmt::dynamic_format_arg_store<fmt::format_context> args{};
 
 		template<typename... Args>
-		static inline auto make_store(Args&&... args) {
+		static inline auto makeStore(Args&&... args) {
 			fmt::dynamic_format_arg_store<fmt::format_context> store;
 			(store.push_back(args), ...);
 			return store;
 		}
 
-		std::size_t line{};
-		std::size_t column{};
+		shader_precompiler::Location location{};
 
 		Error() = default;
-		Error(Level level, Stage stage, ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, std::size_t line, std::size_t column) :
-			column(column), line(line), code(code), stage(stage), args(std::move(args)), level(level) {};
 
-#define PRINT_ERROR_DEFINE(STAGE) inline void printError(shader_precompiler::Error::Level level, shader_precompiler::Error::ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, shader_precompiler::lexer::Token token) { \
-		reporter.report(shader_precompiler::Error{ \
-			level, STAGE, code, std::move(args), token.line, token.column \
-			}); \
+		Error(Level level, Stage stage, ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, shader_precompiler::Location location) :
+			code(code), stage(stage), args(std::move(args)), level(level), location(location) {};
+
+		Error(Level level, Stage stage, ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, std::size_t line, std::size_t column) :
+			Error(level, stage, code, std::move(args), Location(line, column)) {};
+
+#define PRINT_ERROR_DEFINE(STAGE) \
+		inline void printError(shader_precompiler::Error::Level level, shader_precompiler::Error::ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, shader_precompiler::Location location) { \
+			reporter.report(shader_precompiler::Error{ \
+				level, STAGE, code, std::move(args), location }); \
+		} \
+		inline void printError(shader_precompiler::Error::Level level, shader_precompiler::Error::ErrorCodes code, ::fmt::dynamic_format_arg_store<fmt::format_context> args, shader_precompiler::lexer::Token token) { \
+			printError( \
+				level, code, std::move(args), token.location \
+			); \
 		}
 	};
 
@@ -120,7 +153,5 @@ namespace shader_precompiler {
 		virtual ~IDiagnosticReporter() = default;
 
 		virtual void report(const Error& error) = 0;
-
-		virtual bool hasErrors() const = 0;
 	};
 };

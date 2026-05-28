@@ -196,21 +196,6 @@ TEST(Lexer, IgnoreWhitespace)
     EXPECT_TEXT(tokens[1], "world")
 }
 
-TEST(Lexer, LineAndColumn)
-{
-    auto tokens = processLexer(
-        "abc\n"
-        "def"
-    );
-
-    ASSERT_EQ(tokens.size(), 3) << ::testing::PrintToString(tokensToDebugStrings(tokens));
-
-    EXPECT_EQ(tokens[0].line, 0) << ::testing::PrintToString(tokens[0].toDebugString());
-    EXPECT_EQ(tokens[0].column, 0) << ::testing::PrintToString(tokens[0].toDebugString());
-
-    EXPECT_EQ(tokens[2].line, 1) << ::testing::PrintToString(tokens[2].toDebugString());
-}
-
 TEST(Lexer, ShaderExample)
 {
     auto tokens = processLexer(

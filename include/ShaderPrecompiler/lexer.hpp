@@ -45,53 +45,51 @@ namespace shader_precompiler::lexer {
 			/// </summary>
 			String
 		};
-		Token(Type type, std::string text, std::size_t line, std::size_t column) : 
-			type(type), text(text), line(line), column(column) {}
+		Token(Type type, std::string text, std::size_t line, std::size_t column) :
+			type(type), text(text), location(Location(line, column)) {}
 
 		Token(Type type, std::string text) :
 			Token(type, text, 0, 0) {}
 
-        Type type;
-        std::string text;
+		Type type;
+		std::string text;
+		Location location;
 
-        std::size_t line;
-        std::size_t column;
+		std::string toDebugString() const {
 
-        std::string toDebugString() const {
-
-            std::string typeString;
-            switch (type) {
-            case Type::Identifier:
-                typeString = "Identifier";
-                break;
+			std::string typeString;
+			switch (type) {
+			case Type::Identifier:
+				typeString = "Identifier";
+				break;
 			case Type::Directive:
 				typeString = "Directive";
-                break;
+				break;
 			case Type::Number:
 				typeString = "Number";
-                break;
+				break;
 			case Type::Operator:
 				typeString = "Operator";
-                break;
+				break;
 			case Type::Symbol:
 				typeString = "Symbol";
-                break;
+				break;
 			case Type::NewLine:
 				typeString = "NewLine";
-                break;
+				break;
 			case Type::Comment:
 				typeString = "Comment";
-                break;
+				break;
 			case Type::String:
 				typeString = "String";
 				break;
 			default:
 				typeString = "Unknown";
 				break;
-            }
+			}
 
-            return typeString + "[\"" + text + "\" " + std::to_string(line) + ":" + std::to_string(column) + " ]";
-        }
+			return typeString + "[\"" + text + "\" " + location.toString() + " ]";
+		}
 		bool operator==(const Token& token) const {
 			return type == token.type && text == token.text;
 		}
@@ -132,7 +130,7 @@ namespace shader_precompiler::lexer {
 		}
 
 		inline void saveToStream(std::ostream& stream) {
-			Token::Type lastType = (Token::Type) -1;
+			Token::Type lastType = (Token::Type)-1;
 			while (auto next = this->get()) {
 				if (saveToStream$needSpaceBetween(lastType) && saveToStream$needSpaceBetween(next->type)) {
 					stream << ' ';
@@ -151,7 +149,6 @@ namespace shader_precompiler::lexer {
 		std::optional<Token> next() override;
 
 		IDiagnosticReporter& reporter;
-
 
 		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::LEXER)
 	public:
