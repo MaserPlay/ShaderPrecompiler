@@ -22,7 +22,7 @@ static auto processMinimizer(std::string base, SemanticDiagnostic& da, std::func
 
 TEST(MinimizerTests, MinimalCode) {
 	SemanticDiagnostic da{};
-	auto tree = processMinimizer("int ofpdsayuasdoahdsa = 1; void dosihaa8ysdgayd8s(){}", da);
+	auto tree = processMinimizer("int ofpdsayuasdoahdsa = 1; void dosihaa8ysdgayd8s(){ofpdsayuasdoahdsa = 10100101;} void main(){dosihaa8ysdgayd8s()}", da);
 
 	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << tree->toDebugString(0);
 }

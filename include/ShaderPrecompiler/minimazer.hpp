@@ -1,11 +1,12 @@
 #pragma once
 
 #include "ast.hpp"
+#include <vector>
 
 namespace shader_precompiler::visitors {
 
 	class MinimazerVisitor : public shader_precompiler::ast::VisitorBase, public shader_precompiler::ast::BaseAstProcessor {
-		std::size_t* currentMiniLevel;
+		std::vector<std::string>* miniTable;
 
 		shader_precompiler::ast::BaseAstProcessor& from;
 
@@ -26,7 +27,7 @@ namespace shader_precompiler::visitors {
 		void visit(shader_precompiler::ast::nodes::Func& node) override;
 		void visit(shader_precompiler::ast::nodes::NumberExpr& node) override;
 	public:
-		MinimazerVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter) : from(from), currentMiniLevel(NULL), reporter(reporter) {};
+		MinimazerVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter) : from(from), miniTable(NULL), reporter(reporter) {};
 		std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> processTree() override;
 	};
 };

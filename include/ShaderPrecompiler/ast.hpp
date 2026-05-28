@@ -74,12 +74,31 @@ namespace shader_precompiler::ast {
 			}
 			template<class T>
 			inline static std::string unique_ptr_to_debug_string(const std::unique_ptr<T>& input, const std::size_t nesting) {
+				static_assert(std::is_base_of_v<Node, T>);
 				if (input) {
 					return input->toDebugString(nesting);
 				}
 				else {
 					return ident(nesting) + "NULL";
 				}
+			}
+			template<class T>
+			inline static std::string unique_ptr_vector_to_debug_string(const std::vector<std::unique_ptr<T>>& input, const std::string name, const std::size_t nesting) {
+				static_assert(std::is_base_of_v<Node, T>);
+				std::string final;
+				if (input.empty()) {
+					final += (ident(nesting) + name + "_EMPTY\n");
+				}
+				else {
+					final += (ident(nesting) + name + ":\n");
+					for (auto& e : input)
+					{
+						if (e) {
+							final += (unique_ptr_to_debug_string(e, nesting + 1) + '\n');
+						}
+					}
+				}
+				return final;
 			}
 
 			template<class T>
@@ -102,16 +121,7 @@ namespace shader_precompiler::ast {
 			std::vector<std::unique_ptr<Node>> expressions;
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final{};
-				final += ident(nesting) + "CodeBlock:\n";
-				for (auto& e : expressions)
-				{
-					if (e) {
-						final += e->toDebugString(nesting + 1) + '\n';
-					}
-				}
-				if (expressions.empty()) {
-					final += ident(nesting + 1) + "EMPTY";
-				}
+				final += unique_ptr_vector_to_debug_string(expressions, "CodeBlock", nesting + 1);
 				return final;
 			}
 			CodeBlock() = default;
@@ -201,18 +211,8 @@ namespace shader_precompiler::ast {
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "VariableInitialization:\n";
 
-				if (attributes.empty()) {
-					final += ident(nesting + 1) + "ATTRIBUTES_EMPTY\n";
-				}
-				else {
-					final += ident(nesting + 1) + "ATTRIBUTES:\n";
-					for (auto& e : attributes)
-					{
-						if (e) {
-							final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
-						}
-					}
-				}
+				final += unique_ptr_vector_to_debug_string(attributes, "ATTRIBUTES", nesting + 1);
+
 				final += unique_ptr_to_debug_string(type, nesting + 1) + '\n';
 				final += unique_ptr_to_debug_string(name, nesting + 1);
 				return final;
@@ -304,33 +304,12 @@ namespace shader_precompiler::ast {
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "FuncDeclaration:\n";
 
-				if (attributes.empty()) {
-					final += ident(nesting + 1) + "ATTRIBUTES_EMPTY\n";
-				}
-				else {
-					final += ident(nesting + 1) + "ATTRIBUTES:\n";
-					for (auto& e : attributes)
-					{
-						if (e) {
-							final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
-						}
-					}
-				}
+				final += unique_ptr_vector_to_debug_string(attributes, "ATTRIBUTES", nesting + 1);
 
+				final += unique_ptr_to_debug_string(returnType, nesting + 1) + '\n';
 				final += unique_ptr_to_debug_string(name, nesting + 1) + '\n';
 
-				if (params.empty()) {
-					final += ident(nesting + 1) + "PARAMS_EMPTY\n";
-				}
-				else {
-					final += ident(nesting + 1) + "PARAMS:\n";
-					for (auto& e : params)
-					{
-						if (e) {
-							final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
-						}
-					}
-				}
+				final += unique_ptr_vector_to_debug_string(params, "PARAMS", nesting + 1);
 
 				return final;
 			}
@@ -364,16 +343,7 @@ namespace shader_precompiler::ast {
 				std::string final = ident(nesting) + "FuncCall:\n";
 				final += unique_ptr_to_debug_string(name, nesting + 1) + '\n';
 
-				final += ident(nesting + 1) + "PARAMS:\n";
-				for (auto& e : params)
-				{
-					if (e) {
-						final += unique_ptr_to_debug_string(e, nesting + 2) + '\n';
-					}
-				}
-				if (params.empty()) {
-					final += ident(nesting + 1) + "PARAMS_EMPTY\n";
-				}
+				final += unique_ptr_vector_to_debug_string(params, "PARAMS", nesting + 1);
 
 				return final;
 			}

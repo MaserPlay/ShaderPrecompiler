@@ -19,45 +19,53 @@ std::string minimizate(std::size_t num) {
 std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::visitors::MinimazerVisitor::processTree() {
     auto tree = from.processTree();
 
-    std::size_t miniLevel{};
+    std::vector<std::string> miniTable{};
 
-    this->currentMiniLevel = &miniLevel;
+    this->miniTable = &miniTable;
 
     tree->accept(*this);
 
-    this->currentMiniLevel = NULL;
+    this->miniTable = NULL;
 
     return tree;
 }
 
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::CodeBlock& node){
 
-    auto baseLevel = this->currentMiniLevel;
-    std::size_t miniLevel = *this->currentMiniLevel;
+    auto baseLevel = this->miniTable;
+    auto miniTable = *this->miniTable;
 
-    this->currentMiniLevel = &miniLevel;
+    this->miniTable = &miniTable;
 
     for(auto& expr : node.expressions)
     {
         expr->accept(*this);
     }
 
+    this->miniTable = baseLevel;
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Identifier& node){
-    
+    auto currentFuncName = std::find(begin(*this->miniTable), end(*this->miniTable), node.name);
+    std::size_t currentFuncNamePosition = (currentFuncName - begin(*this->miniTable));
+
+    node.name = minimizate(currentFuncNamePosition);
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Return& node){
-    
+    node.value->accept(*this);
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Attribute& node){
     
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::VariableInitialization& node){
     
-    node.name->name = minimizate((*this->currentMiniLevel)++);
+    (*this->miniTable).push_back(node.name->name);
+
+    node.name->name = minimizate((*this->miniTable).size() - 1);
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::IfElse& node){
-    
+    node.ifCondition->accept(*this);
+    node.elseBranch->accept(*this);
+    node.thenBranch->accept(*this);
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Operator& node){
     node.left->accept(*this);
@@ -65,14 +73,26 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::FuncDeclaration& node){
 
-    node.name->name = minimizate((*this->currentMiniLevel)++);
+    if (node.name->name == "main" &&
+        node.params.empty() &&
+        node.returnType->name == "void") {
+        // MAIN FUNC
+    }
+    else {
+        (*this->miniTable).push_back(node.name->name);
+
+        node.name->name = minimizate((*this->miniTable).size() - 1);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::FuncCall& node){
-    
+    auto currentFuncName = std::find(begin(*this->miniTable), end(*this->miniTable), node.name->name);
+    std::size_t currentFuncNamePosition = (currentFuncName - begin(*this->miniTable));
+
+    node.name->name = minimizate(currentFuncNamePosition);
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Func& node){
-    node.code->accept(*this);
     node.declaration->accept(*this);
+    node.code->accept(*this);
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::NumberExpr& node){
     
