@@ -25,7 +25,7 @@ TEST(SemanticTests, NoErrors) {
 	SemanticDiagnostic da{};
 	auto tree = processSemantic("int a = 1; void idposahjoadshaodis(){a = 1;}", da);
 
-	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << tree->toDebugString(0);
+	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
 }
 
 TEST(SemanticTests, Predeclareted) {
@@ -39,12 +39,12 @@ TEST(SemanticTests, Predeclareted) {
 			} });
 		});
 
-	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << tree->toDebugString(0);
+	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
 }
 
 TEST(SemanticTests, MultipleErrors) {
 	SemanticDiagnostic da{};
 	auto tree = processSemantic("re6rte6e6 a = 1; pdashdhoiudash idposahjoadshaodis(){ldsnauid = klab;kgfihasdf();} void idposahjoadshaodis(){}", da);
 
-	ASSERT_GE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 6) << tree->toDebugString(0);
+	ASSERT_GE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 6) << shader_precompiler::ast::toDebugString(tree);
 }

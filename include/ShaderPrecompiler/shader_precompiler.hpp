@@ -55,6 +55,10 @@ namespace shader_precompiler {
 			TOKEN_IS_NULL,
 			REDEFINITION_VARIABLE,
 			REDEFINITION_FUNCTION,
+
+			//GLSL
+			MULTIPLE_ATTRIBUTES = 5000,
+			LAYOUT_IN_INVALID_PARAMS,
 		};
 
 		enum class Stage
@@ -63,7 +67,8 @@ namespace shader_precompiler {
 			LEXER,
 			AST,
 			MINIMAZER,
-			SEMANTIC_AMALIZITER
+			SEMANTIC_AMALIZITER,
+			GLSL
 		};
 		enum class Level {
 			INFO,

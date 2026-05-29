@@ -16,14 +16,17 @@ std::string minimizate(std::size_t num) {
     return result;
 }
 
-std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::visitors::MinimazerVisitor::processTree() {
+std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precompiler::visitors::MinimazerVisitor::processTree() {
     auto tree = from.processTree();
 
     std::vector<std::string> miniTable{};
 
     this->miniTable = &miniTable;
 
-    tree->accept(*this);
+    for (auto& t : tree)
+    {
+        t->accept(*this);
+    }
 
     this->miniTable = NULL;
 

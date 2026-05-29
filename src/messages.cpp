@@ -51,6 +51,10 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
         shader_precompiler::Error::ErrorCodes::REDEFINITION_FUNCTION,
         "Redefinition function '{}'"
     },
+    {
+        shader_precompiler::Error::ErrorCodes::LAYOUT_IN_INVALID_PARAMS,
+        "[[__glsl_layout_in(  )]] invalid params"
+    },
 };
 
 std::string shader_precompiler::locales::getString(shader_precompiler::locales::Locales locale, shader_precompiler::Error::ErrorCodes code) {

@@ -3,3 +3,4 @@
 #include "src/AstTests.hpp"
 #include "src/SemanticTests.hpp"
 #include "src/MinimizerTests.hpp"
+#include "src/GlslTests.hpp"

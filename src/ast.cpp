@@ -4,11 +4,8 @@
 
 #include "utils/unique_ptr_casts.hpp"
 
-std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::ast::AstParser::processTree() {
-	if (base != NULL) {
-		return base;
-	}
-	base = std::make_shared<shader_precompiler::ast::nodes::CodeBlock>();
+std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precompiler::ast::AstParser::processTree() {
+	std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> base {};
 
 	while (auto first = from.peek()) {
 
@@ -20,13 +17,13 @@ std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::a
 
 		if (auto decl = parseDeclaration(std::move(attributes)))
 		{
-			base->expressions.push_back(std::move(decl));
+			base.push_back(std::move(decl));
 			continue;
 		}
 
 		if (auto stmt = parseExpression(parsePrimary()))
 		{
-			base->expressions.push_back(std::move(stmt));
+			base.push_back(std::move(stmt));
 			continue;
 		}
 

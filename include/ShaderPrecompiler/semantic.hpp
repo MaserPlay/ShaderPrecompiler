@@ -78,7 +78,7 @@ namespace shader_precompiler {
 		void visit(shader_precompiler::ast::nodes::NumberExpr& node) override;
 	public:
 		SemanticVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter) : from(from), reporter(reporter) {};
-		std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> processTree() override;
+		std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> processTree() override;
 
 		template<typename... Args>
 		inline void addTypes(Args&&... args) {

@@ -1,22 +1,17 @@
 #pragma once
 
 #include "ast.hpp"
-#include <vector>
 
-namespace shader_precompiler::visitors {
-
+namespace shader_precompiler {
 	/// <summary>
-	/// [[__minimazer_skip]] to skip
+	/// [[__glsl_in]] [[__glsl_out]] [[__glsl_uniform]] [[__glsl_layout_in(0)]]
 	/// </summary>
-	class MinimazerVisitor : public shader_precompiler::ast::VisitorBase, public shader_precompiler::ast::BaseAstProcessor {
-		std::vector<std::string>* miniTable;
-
+	class GlslVisitor : public shader_precompiler::ast::VisitorBase {
 		shader_precompiler::ast::BaseAstProcessor& from;
-
 		IDiagnosticReporter& reporter;
+		std::ostream& out;
 
-
-		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::MINIMAZER)
+		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::GLSL)
 
 		void visit(shader_precompiler::ast::nodes::CodeBlock& node) override;
 		void visit(shader_precompiler::ast::nodes::Identifier& node) override;
@@ -30,7 +25,7 @@ namespace shader_precompiler::visitors {
 		void visit(shader_precompiler::ast::nodes::Func& node) override;
 		void visit(shader_precompiler::ast::nodes::NumberExpr& node) override;
 	public:
-		MinimazerVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter) : from(from), miniTable(NULL), reporter(reporter) {};
-		std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> processTree() override;
+		GlslVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter, std::ostream& to) : from(from), reporter(reporter), out(to) {};
+		void generate();
 	};
-};
+}

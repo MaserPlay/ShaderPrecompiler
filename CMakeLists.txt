@@ -38,7 +38,7 @@ FetchContent_MakeAvailable(fmt)
 add_library(${PROJECT_NAME}Core STATIC
      
     "src/precompiler.cpp"
- "src/utils/string_utils.cpp" "src/lexer.cpp" "src/ast.cpp" "src/minimazer.cpp" "src/messages.cpp" "src/diagnostic_reporters.cpp" "src/semantic.cpp")
+ "src/utils/string_utils.cpp" "src/lexer.cpp" "src/ast.cpp" "src/minimazer.cpp" "src/messages.cpp" "src/diagnostic_reporters.cpp" "src/semantic.cpp" "src/glsl.cpp")
 
 add_library(${PROJECT_NAME}::Core ALIAS ${PROJECT_NAME}Core)
 

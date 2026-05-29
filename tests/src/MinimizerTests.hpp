@@ -24,12 +24,12 @@ TEST(MinimizerTests, MinimalCode) {
 	SemanticDiagnostic da{};
 	auto tree = processMinimizer("int ofpdsayuasdoahdsa = 1; void dosihaa8ysdgayd8s(){ofpdsayuasdoahdsa = 10100101;} void main(){dosihaa8ysdgayd8s()}", da);
 
-	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << tree->toDebugString(0);
+	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
 }
 
 TEST(MinimizerTests, Skip) {
 	SemanticDiagnostic da{};
 	auto tree = processMinimizer("[[__minimazer_skip]] int ofpdsayuasdoahdsa = 1; [[__minimazer_skip]] void dosihaa8ysdgayd8s(){ofpdsayuasdoahdsa = 10100101;} void main(){dosihaa8ysdgayd8s(); ofpdsayuasdoahdsa = 38658243;}", da);
 
-	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << tree->toDebugString(0);
+	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
 }

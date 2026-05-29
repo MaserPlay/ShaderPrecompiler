@@ -8,11 +8,11 @@ static auto processAst(std::string base) {
 	shader_precompiler::PrintDiagnostic printDia(shader_precompiler::locales::Locales::ENGLISH);
 	std::istringstream iss(base);
 
-	shader_precompiler::lexer::LexerStream tokenStream( iss, printDia );
+	shader_precompiler::lexer::LexerStream tokenStream(iss, printDia);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, printDia );
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, printDia);
 
-	shader_precompiler::ast::AstParser ast( afterPreprocessor, printDia );
+	shader_precompiler::ast::AstParser ast(afterPreprocessor, printDia);
 
 	return ast.processTree();
 }
@@ -26,8 +26,7 @@ std::vector<std::unique_ptr<T>> makeVector(Args&&... args) {
 TEST(AstTests, SimplyExpression) {
 	auto tree = processAst("int a = 2+2;");
 
-	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
-	rightTree->expressions.push_back(
+	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>(
 		std::make_unique<shader_precompiler::ast::nodes::Operator>(
 			std::make_unique< shader_precompiler::ast::nodes::VariableInitialization>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
@@ -42,14 +41,13 @@ TEST(AstTests, SimplyExpression) {
 		)
 	);
 
-	ASSERT_EQ_AST(*rightTree, *tree);
+	ASSERT_TRUE_AST(rightTree, tree);
 }
 
 TEST(AstTests, RightOperationOrderExpression) {
 	auto tree = processAst("int a = 2+(2*2);");
 
-	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
-	rightTree->expressions.push_back(
+	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>(
 		std::make_unique<shader_precompiler::ast::nodes::Operator>(
 			std::make_unique< shader_precompiler::ast::nodes::VariableInitialization>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
@@ -68,23 +66,20 @@ TEST(AstTests, RightOperationOrderExpression) {
 		)
 	);
 
-	ASSERT_EQ_AST(*rightTree, *tree);
+	ASSERT_TRUE_AST(rightTree, tree);
 }
 
 TEST(AstTests, EmptyFunc) {
 	auto tree = processAst("void main();void main(){}");
 
 
-	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
-	rightTree->expressions.push_back(
+	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>(
 		std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 			std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
 			std::make_unique< shader_precompiler::ast::nodes::Identifier>("main"),
 			makeVector< shader_precompiler::ast::nodes::VariableInitialization>()
 		)
-	);
-	rightTree->expressions.push_back(
-		std::make_unique<shader_precompiler::ast::nodes::Func>(
+		, std::make_unique<shader_precompiler::ast::nodes::Func>(
 			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("main"),
@@ -94,15 +89,14 @@ TEST(AstTests, EmptyFunc) {
 		)
 	);
 
-	ASSERT_EQ_AST(*rightTree, *tree);
+	ASSERT_TRUE_AST(rightTree, tree);
 }
 
 TEST(AstTests, PlusFunc) {
 	auto tree = processAst("int plus(int one, int two){ return one+two; }void main(){int p = plus(2,3);plus(1,2);}");
 
 
-	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
-	rightTree->expressions.push_back(
+	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>(
 		std::make_unique<shader_precompiler::ast::nodes::Func>(
 			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
@@ -130,8 +124,7 @@ TEST(AstTests, PlusFunc) {
 				)
 			)
 		)
-	);
-	rightTree->expressions.push_back(
+		,
 		std::make_unique<shader_precompiler::ast::nodes::Func>(
 			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
@@ -166,7 +159,7 @@ TEST(AstTests, PlusFunc) {
 		)
 	);
 
-	ASSERT_EQ_AST(*rightTree, *tree);
+	ASSERT_TRUE_AST(rightTree, tree);
 }
 
 TEST(AstTests, IfElseLadder) {
@@ -189,8 +182,7 @@ void ladder(int number1, int number2) {
 })");
 
 
-	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
-	rightTree->expressions.push_back(
+	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>(
 		std::make_unique<shader_precompiler::ast::nodes::Func>(
 			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
@@ -224,7 +216,7 @@ void ladder(int number1, int number2) {
 									)
 								)
 							)
-						), 
+						),
 						std::make_unique<shader_precompiler::ast::nodes::IfElse>(
 							std::make_unique<shader_precompiler::ast::nodes::Operator>(
 								std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
@@ -260,15 +252,14 @@ void ladder(int number1, int number2) {
 		)
 	);
 
-	ASSERT_EQ_AST(*rightTree, *tree);
+	ASSERT_TRUE_AST(rightTree, tree);
 }
 
 TEST(AstTests, Atrributes) {
 	auto tree = processAst("[[func(param)]] int value; [[param]] void main(){}");
 
 
-	auto rightTree = new shader_precompiler::ast::nodes::CodeBlock();
-	rightTree->expressions.push_back(
+	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>(
 		std::make_unique<shader_precompiler::ast::nodes::VariableInitialization>(
 			std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
 			std::make_unique< shader_precompiler::ast::nodes::Identifier>("value"),
@@ -283,9 +274,7 @@ TEST(AstTests, Atrributes) {
 				)
 			)
 		)
-	);
-	rightTree->expressions.push_back(
-		std::make_unique<shader_precompiler::ast::nodes::Func>(
+		, std::make_unique<shader_precompiler::ast::nodes::Func>(
 			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("main"),
@@ -300,5 +289,5 @@ TEST(AstTests, Atrributes) {
 		)
 	);
 
-	ASSERT_EQ_AST(*rightTree, *tree);
+	ASSERT_TRUE_AST(rightTree, tree);
 }

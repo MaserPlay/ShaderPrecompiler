@@ -1,14 +1,17 @@
 #include "semantic.hpp"
 
 
-std::shared_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::SemanticVisitor::processTree() {
+std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precompiler::SemanticVisitor::processTree() {
     auto tree = from.processTree();
 
     std::vector<shader_precompiler::SemanticVisitor::Variable> currentVariables{};
 
     this->currentVariables = &currentVariables;
 
-    tree->accept(*this);
+    for (auto& t : tree)
+    {
+        t->accept(*this);
+    }
 
     this->currentVariables = NULL;
 

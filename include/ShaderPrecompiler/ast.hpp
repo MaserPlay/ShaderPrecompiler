@@ -422,14 +422,34 @@ namespace shader_precompiler::ast {
 		return false;
 	}
 
+	inline nodes::FuncCall* getFuncAttribute(std::vector<std::unique_ptr<nodes::Attribute>>& attributes, std::string name) {
+		for (auto& attr : attributes)
+		{
+			if (auto func = dynamic_cast<nodes::FuncCall*>(attr->value.get())) {
+				if (func->name->name == name) {
+					return func;
+				}
+			}
+		}
+		return NULL;
+	}
+
+	inline std::string toDebugString(const std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>>& a) {
+		std::string out{};
+		for (auto& ai : a)
+		{
+			out += ai->toDebugString(0);
+		}
+		return out;
+	}
+
 	class BaseAstProcessor{
 	public:
-		virtual std::shared_ptr<nodes::CodeBlock> processTree() = 0;
+		virtual std::vector<std::unique_ptr<nodes::Node>> processTree() = 0;
 	};
 
 	class AstParser : public BaseAstProcessor {
 		shader_precompiler::lexer::BaseLexerStream& from;
-		std::shared_ptr<nodes::CodeBlock> base;
 
 		std::unique_ptr<nodes::Node> parseExpression(std::unique_ptr<shader_precompiler::ast::nodes::Node> left, int minPrec = 0);
 		std::unique_ptr<nodes::Node> parseSingle();
@@ -449,6 +469,6 @@ namespace shader_precompiler::ast {
 		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::AST)
 	public:
 		AstParser(shader_precompiler::lexer::BaseLexerStream& stream, IDiagnosticReporter& reporter) : from(stream), reporter(reporter) {}
-		std::shared_ptr<nodes::CodeBlock> processTree() override;
+		std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> processTree() override;
 	};
 }
