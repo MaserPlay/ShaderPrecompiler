@@ -410,6 +410,18 @@ namespace shader_precompiler::ast {
 		};
 	};
 
+	inline bool haveAttribute(std::vector<std::unique_ptr<nodes::Attribute>>& attributes, std::string name) {
+		for (auto& attr : attributes)
+		{
+			if (auto id = dynamic_cast<nodes::Identifier*>(attr->value.get())) {
+				if (id->name == name) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	class BaseAstProcessor{
 	public:
 		virtual std::shared_ptr<nodes::CodeBlock> processTree() = 0;

@@ -46,9 +46,11 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Identifier& node){
     auto currentFuncName = std::find(begin(*this->miniTable), end(*this->miniTable), node.name);
-    std::size_t currentFuncNamePosition = (currentFuncName - begin(*this->miniTable));
+    if (end(*this->miniTable) != currentFuncName) {
+        std::size_t currentFuncNamePosition = (currentFuncName - begin(*this->miniTable));
 
-    node.name = minimizate(currentFuncNamePosition);
+        node.name = minimizate(currentFuncNamePosition);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Return& node){
     node.value->accept(*this);
@@ -57,10 +59,12 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
     
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::VariableInitialization& node){
-    
-    (*this->miniTable).push_back(node.name->name);
 
-    node.name->name = minimizate((*this->miniTable).size() - 1);
+    if (!ast::haveAttribute(node.attributes, "__minimazer_skip")) {
+        (*this->miniTable).push_back(node.name->name);
+
+        node.name->name = minimizate((*this->miniTable).size() - 1);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::IfElse& node){
     node.ifCondition->accept(*this);
@@ -79,16 +83,20 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
         // MAIN FUNC
     }
     else {
-        (*this->miniTable).push_back(node.name->name);
+        if (!ast::haveAttribute(node.attributes, "__minimazer_skip")) {
+            (*this->miniTable).push_back(node.name->name);
 
-        node.name->name = minimizate((*this->miniTable).size() - 1);
+            node.name->name = minimizate((*this->miniTable).size() - 1);
+        }
     }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::FuncCall& node){
     auto currentFuncName = std::find(begin(*this->miniTable), end(*this->miniTable), node.name->name);
-    std::size_t currentFuncNamePosition = (currentFuncName - begin(*this->miniTable));
+    if (end(*this->miniTable) != currentFuncName) {
+        std::size_t currentFuncNamePosition = (currentFuncName - begin(*this->miniTable));
 
-    node.name->name = minimizate(currentFuncNamePosition);
+        node.name->name = minimizate(currentFuncNamePosition);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Func& node){
     node.declaration->accept(*this);

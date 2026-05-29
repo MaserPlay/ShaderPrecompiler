@@ -43,6 +43,14 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
         shader_precompiler::Error::ErrorCodes::TOKEN_IS_NULL,
         "Token is null '{}'"
     },
+    {
+        shader_precompiler::Error::ErrorCodes::REDEFINITION_VARIABLE,
+        "Redefinition variable '{}'"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::REDEFINITION_FUNCTION,
+        "Redefinition function '{}'"
+    },
 };
 
 std::string shader_precompiler::locales::getString(shader_precompiler::locales::Locales locale, shader_precompiler::Error::ErrorCodes code) {

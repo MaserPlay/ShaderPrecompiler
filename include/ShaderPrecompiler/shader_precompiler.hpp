@@ -53,6 +53,8 @@ namespace shader_precompiler {
 			UNDEFINDED_VARIABLE,
 			UNDEFINDED_FUNCTION,
 			TOKEN_IS_NULL,
+			REDEFINITION_VARIABLE,
+			REDEFINITION_FUNCTION,
 		};
 
 		enum class Stage

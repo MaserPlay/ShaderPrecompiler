@@ -5,6 +5,9 @@
 
 namespace shader_precompiler::visitors {
 
+	/// <summary>
+	/// [[__minimazer_skip]] to skip
+	/// </summary>
 	class MinimazerVisitor : public shader_precompiler::ast::VisitorBase, public shader_precompiler::ast::BaseAstProcessor {
 		std::vector<std::string>* miniTable;
 

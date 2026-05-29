@@ -62,7 +62,13 @@ void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::
         return;
     }
 
-    addVariable(Variable{ node.type->name, node.name->name });
+    if (isVariableName(node.name->name)) {
+        printError(Error::Level::FATAL, Error::ErrorCodes::REDEFINITION_VARIABLE, Error::makeStore(node.type->name), node.type->location);
+    }
+    else {
+        addVariable(Variable{ node.type->name, node.name->name });
+    }
+
 }
 void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::IfElse& node) {
     if (node.ifCondition == NULL) {
@@ -154,7 +160,12 @@ void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::
 
     Func func{ node.returnType->name, node.name->name, params };
 
-    addFunctions(func);
+    if (isFunctionName(node.name->name)) {
+        printError(Error::Level::FATAL, Error::ErrorCodes::REDEFINITION_FUNCTION, Error::makeStore(node.name->name), node.location);
+    }
+    else {
+        addFunctions(func);
+    }
 }
 void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::FuncCall& node) {
     if (node.name == NULL) {

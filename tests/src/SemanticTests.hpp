@@ -44,7 +44,7 @@ TEST(SemanticTests, Predeclareted) {
 
 TEST(SemanticTests, MultipleErrors) {
 	SemanticDiagnostic da{};
-	auto tree = processSemantic("re6rte6e6 a = 1; pdashdhoiudash idposahjoadshaodis(){ldsnauid = klab;kgfihasdf();}", da);
+	auto tree = processSemantic("re6rte6e6 a = 1; pdashdhoiudash idposahjoadshaodis(){ldsnauid = klab;kgfihasdf();} void idposahjoadshaodis(){}", da);
 
-	ASSERT_GE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 5) << tree->toDebugString(0);
+	ASSERT_GE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 6) << tree->toDebugString(0);
 }
