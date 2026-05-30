@@ -27,7 +27,8 @@ std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precom
 			continue;
 		}
 
-		printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::makeStore(first->toDebugString()), *from.get());
+		printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN, shader_precompiler::Error::makeStore(first->toDebugString()), *first);
+		from.get();
 		continue;
 	}
 

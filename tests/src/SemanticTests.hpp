@@ -48,3 +48,10 @@ TEST(SemanticTests, MultipleErrors) {
 
 	ASSERT_GE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 6) << shader_precompiler::ast::toDebugString(tree);
 }
+
+TEST(SemanticTests, ImposibleCode) {
+	SemanticDiagnostic da{};
+	auto tree = processSemantic("s;a;a;a;;a;a;;a;a;a;a;;;;;;a;;a;a;;a;a;a;;a;a;as[odj] d]a]d ad[d[ads] a[sd ][a]ds [as]d [a]sd[ a]sd[[ [[ []] ]][ [[ [] ][] [] [ ][ ][ ] [[] [][ ] [] [][ ]i  shda9uhd sahs9d 9iauhsd 23y r78 ty 8df6yy7fassdaff7a 76sd67asdf ; 'qk4t[ik3t4ep[ju[a'ufa[f'afdh;adfhlFH;ASDFHf'EAH;", da);
+
+	ASSERT_GE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
+}

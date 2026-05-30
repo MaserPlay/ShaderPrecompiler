@@ -8,8 +8,11 @@
 #include "shader_precompiler.hpp"
 #include "lexer.hpp"
 #include "precompiler.hpp"
-#include "utils/string_utils.hpp"
+#include "diagnostic_reporters.hpp"
 #include "messages.hpp"
+#include "minimazer.hpp"
+#include "semantic.hpp"
+#include "to_glsl.hpp"
 
 #define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
 
@@ -19,18 +22,18 @@ void createArgumentApi(argparse::ArgumentParser& program) {
 	input.add_argument("--code", "-c").help("Input by input arg");
 	input.add_argument("--std_cin", "-stdin").help("Input by std::cin").flag();
 
-	std::string shader_langs[]{ SHADER_LANGUAGES_VALUES_STRINGS };
+	//std::string shader_langs[]{ SHADER_LANGUAGES_VALUES_STRINGS };
 
-	std::string list;
-	for (const auto& s : shader_langs)
-	{
-		list += ", " + s;
-	}
+	//std::string list;
+	//for (const auto& s : shader_langs)
+	//{
+	//	list += ", " + s;
+	//}
 
-	program.add_argument("--out_language", "-ol")
-		.help("what shader language to use to output the result. One of" + list)
-		.required()
-		.choices(SHADER_LANGUAGES_VALUES_STRINGS);
+	//program.add_argument("--out_language", "-ol")
+	//	.help("what shader language to use to output the result. One of" + list)
+	//	.required()
+	//	.choices(SHADER_LANGUAGES_VALUES_STRINGS);
 
 	auto& output = program.add_mutually_exclusive_group();
 	output.add_argument("--output_file", "-of").help("Output by writing file");
@@ -66,11 +69,21 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 
 static void processAll(std::istream& in, std::ostream& out) {
 
-	shader_precompiler::lexer::LexerStream tokenStream{ in };
+	shader_precompiler::PrintDiagnostic da(shader_precompiler::locales::Locales::ENGLISH, std::cerr);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor{ tokenStream };
+	shader_precompiler::lexer::LexerStream tokenStream(in, da);
 
-	afterPreprocessor.saveToStream(out);
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, da);
+
+	shader_precompiler::ast::AstParser ast(afterPreprocessor, da);
+
+	shader_precompiler::visitors::MinimazerVisitor min(ast, da);
+
+	shader_precompiler::SemanticVisitor sem(min, da);
+
+	shader_precompiler::GlslVisitor glsl(sem, da, out);
+
+	glsl.generate();
 }
 
 shader_precompiler::ShaderLanguages getShaderLanguage(const argparse::ArgumentParser& program) {
@@ -135,7 +148,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
+	//shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
 	collectInputCode(program, [&program](std::istream& in) {
 		outputResult(program, [&in](std::ostream& out) {processAll(in, out); }); });
