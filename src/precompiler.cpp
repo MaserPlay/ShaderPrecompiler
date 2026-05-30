@@ -38,8 +38,11 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::precompiler:
 			if (lastToken && lastToken->type == shader_precompiler::lexer::Token::Type::Directive) {
 				handleDirective(from.get().value());
 			}
-		} else
-		if (lastToken->type == shader_precompiler::lexer::Token::Type::Comment) {
+		} else if (lastToken->type == shader_precompiler::lexer::Token::Type::Comment) {
+			from.get();
+		}
+		else if (lastToken->type == shader_precompiler::lexer::Token::Type::Directive) {
+			printError(shader_precompiler::Error::Level::WARNING, shader_precompiler::Error::ErrorCodes::UNEXPECTED_TOKEN, shader_precompiler::Error::makeStore(lastToken->text), *lastToken);
 			from.get();
 		}
 

@@ -68,20 +68,21 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 }
 
 static void processAll(std::istream& in, std::ostream& out) {
+	shader_precompiler::PrintDiagnostic prDa(shader_precompiler::locales::Locales::ENGLISH, std::cerr);
 
-	shader_precompiler::PrintDiagnostic da(shader_precompiler::locales::Locales::ENGLISH, std::cerr);
+	shader_precompiler::CalcDiagnostic calcDa(prDa);
 
-	shader_precompiler::lexer::LexerStream tokenStream(in, da);
+	shader_precompiler::lexer::LexerStream tokenStream(in, calcDa);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, da);
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, calcDa);
 
-	shader_precompiler::ast::AstParser ast(afterPreprocessor, da);
+	shader_precompiler::ast::AstParser ast(afterPreprocessor, calcDa);
 
 	shader_precompiler::visitors::MinimazerVisitor min(ast, da);
 
-	shader_precompiler::SemanticVisitor sem(min, da);
+	shader_precompiler::SemanticVisitor sem(min, calcDa);
 
-	shader_precompiler::GlslVisitor glsl(sem, da, out);
+	shader_precompiler::GlslVisitor glsl(sem, calcDa, out);
 
 	glsl.generate();
 }

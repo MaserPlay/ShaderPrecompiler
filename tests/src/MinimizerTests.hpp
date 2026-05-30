@@ -3,7 +3,7 @@
 #include "minimazer.hpp"
 #include "semantic.hpp"
 
-static auto processMinimizer(std::string base, SemanticDiagnostic& da, std::function<void(shader_precompiler::SemanticVisitor&)> actionWithSemantic = [](shader_precompiler::SemanticVisitor&) {}) {
+static auto processMinimizer(std::string base, shader_precompiler::CalcDiagnostic& da, std::function<void(shader_precompiler::SemanticVisitor&)> actionWithSemantic = [](shader_precompiler::SemanticVisitor&) {}) {
 	std::istringstream iss(base);
 
 	shader_precompiler::lexer::LexerStream tokenStream( iss, da);
@@ -21,14 +21,16 @@ static auto processMinimizer(std::string base, SemanticDiagnostic& da, std::func
 }
 
 TEST(MinimizerTests, MinimalCode) {
-	SemanticDiagnostic da{};
+	shader_precompiler::PrintDiagnostic pr(shader_precompiler::locales::Locales::ENGLISH);
+	shader_precompiler::CalcDiagnostic da(pr);
 	auto tree = processMinimizer("int ofpdsayuasdoahdsa = 1; void dosihaa8ysdgayd8s(){ofpdsayuasdoahdsa = 10100101;} void main(){dosihaa8ysdgayd8s()}", da);
 
 	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
 }
 
 TEST(MinimizerTests, Skip) {
-	SemanticDiagnostic da{};
+	shader_precompiler::PrintDiagnostic pr(shader_precompiler::locales::Locales::ENGLISH);
+	shader_precompiler::CalcDiagnostic da(pr);
 	auto tree = processMinimizer("[[__minimazer_skip]] int ofpdsayuasdoahdsa = 1; [[__minimazer_skip]] void dosihaa8ysdgayd8s(){ofpdsayuasdoahdsa = 10100101;} void main(){dosihaa8ysdgayd8s(); ofpdsayuasdoahdsa = 38658243;}", da);
 
 	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);

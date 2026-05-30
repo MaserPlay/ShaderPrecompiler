@@ -1,7 +1,6 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <array>
 
 #include "lexer.hpp"
 #include "ast.hpp"
@@ -38,24 +37,6 @@ inline bool areEqual(
         }
     );
 }
-
-class SemanticDiagnostic : public shader_precompiler::IDiagnosticReporter {
-	shader_precompiler::PrintDiagnostic pr;
-	std::array<std::size_t, 4> errors{};
-	SemanticDiagnostic(const SemanticDiagnostic&) = delete;
-	SemanticDiagnostic(const SemanticDiagnostic&&) = delete;
-public:
-	SemanticDiagnostic() : pr(shader_precompiler::locales::Locales::ENGLISH), errors() {}
-
-	void report(const shader_precompiler::Error& error) override {
-		pr.report(error);
-		errors[(unsigned short)error.level]++;
-	}
-
-	std::size_t getErrorsCount(shader_precompiler::Error::Level level) const {
-		return errors.at((unsigned short)level);
-	}
-};
 
 #define ASSERT_SIZE(base, target) ASSERT_EQ(base.size(), target) << ::testing::PrintToString(tokensToDebugStrings(base));
 #define ASSERT_TRUE_AST(rightTree, tree) ASSERT_TRUE(areEqual(rightTree, tree)) << shader_precompiler::ast::toDebugString(tree) << "RIGHT:\n" << shader_precompiler::ast::toDebugString(rightTree);
