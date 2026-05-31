@@ -1,3 +1,12 @@
+# Argument api
+**You can get by `-h` argument**
+# Shader api
+- `[[__minimazer_skip]]` to skip the minimization of this variable/function
+- `[[__glsl_in]]` getting data into the shader
+- `[[__glsl_out]]` transmitting data from the shader
+- `[[__glsl_uniform]]` global variables
+- `[[__glsl_layout_in(0)]]` getting data into the shader by location
+- `void main()` main function
 # Style Guide
 - All header files should have `#pragma once` guards to prevent multiple inclusion.
 - With few exceptions, place code in a namespace reflect module structure (e.g. `precompiler`, ... ).
