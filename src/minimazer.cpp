@@ -16,7 +16,7 @@ std::string minimizate(std::size_t num) {
     return result;
 }
 
-std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precompiler::visitors::MinimazerVisitor::processTree() {
+shader_precompiler::ast::TreeResult shader_precompiler::visitors::MinimazerVisitor::processTree() {
     auto tree = from.processTree();
 
     std::vector<std::string> miniTable{};

@@ -4,7 +4,7 @@
 
 #include "utils/unique_ptr_casts.hpp"
 
-std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precompiler::ast::AstParser::processTree() {
+shader_precompiler::ast::TreeResult shader_precompiler::ast::AstParser::processTree() {
 	std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> base {};
 
 	while (auto first = from.peek()) {

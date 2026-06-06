@@ -2,10 +2,8 @@
 
 
 void shader_precompiler::GlslVisitor::generate() {
-	auto tree = from.processTree();
-
 	out << "#version 330 core\n";
-	for (auto& t : tree)
+	for (auto& t : from)
 	{
 		t->accept(*this);
 		if (dynamic_cast<shader_precompiler::ast::nodes::Func*>(t.get())) {

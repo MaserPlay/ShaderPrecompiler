@@ -17,6 +17,7 @@
 #define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
 
 void createArgumentApi(argparse::ArgumentParser& program) {
+	program.add_argument("--no_fail", "-nf");
 	auto& input = program.add_mutually_exclusive_group(true);
 	input.add_argument("--input_file", "-if").help("Input by reading file");
 	input.add_argument("--code", "-c").help("Input by input arg");
@@ -67,7 +68,8 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 
 }
 
-static void processAll(std::istream& in, std::ostream& out) {
+static void processAll(std::istream& in, std::ostream& out, bool skipFail = false) {
+
 	shader_precompiler::PrintDiagnostic prDa(shader_precompiler::locales::Locales::ENGLISH, std::cerr);
 
 	shader_precompiler::CalcDiagnostic calcDa(prDa);
@@ -78,13 +80,15 @@ static void processAll(std::istream& in, std::ostream& out) {
 
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, calcDa);
 
-	shader_precompiler::visitors::MinimazerVisitor min(ast, da);
+	shader_precompiler::visitors::MinimazerVisitor min(ast, calcDa);
 
 	shader_precompiler::SemanticVisitor sem(min, calcDa);
 
-	shader_precompiler::GlslVisitor glsl(sem, calcDa, out);
-
-	glsl.generate();
+	auto tree = sem.processTree();
+	if (skipFail || calcDa.getErrorsCount(shader_precompiler::Error::Level::FATAL) == 0) {
+		shader_precompiler::GlslVisitor glsl(std::move(tree), calcDa, out);
+		glsl.generate();
+	}
 }
 
 shader_precompiler::ShaderLanguages getShaderLanguage(const argparse::ArgumentParser& program) {
@@ -152,7 +156,9 @@ int main(int argc, char* argv[]) {
 	//shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
 	collectInputCode(program, [&program](std::istream& in) {
-		outputResult(program, [&in](std::ostream& out) {processAll(in, out); }); });
+		outputResult(program, [&in, &program](std::ostream& out) {
+			processAll(in, out, program.is_used("-nf")); 
+			}); });
 
 	return 0;
 }

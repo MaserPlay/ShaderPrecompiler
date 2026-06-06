@@ -137,7 +137,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 
 			auto nextWord = (*macro).text;
 
-			if (directiveToken.text == "#define") {
+				if (directiveToken.text == "#define") {
 
 				std::vector<shader_precompiler::lexer::Token> buffer { };
 				auto nextToken = from.peek();

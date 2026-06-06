@@ -1,7 +1,7 @@
 #include "semantic.hpp"
 
 
-std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> shader_precompiler::SemanticVisitor::processTree() {
+shader_precompiler::ast::TreeResult shader_precompiler::SemanticVisitor::processTree() {
     auto tree = from.processTree();
 
     std::vector<shader_precompiler::SemanticVisitor::Variable> currentVariables{};

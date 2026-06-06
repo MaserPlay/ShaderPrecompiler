@@ -7,7 +7,7 @@ namespace shader_precompiler {
 	/// [[__glsl_in]] [[__glsl_out]] [[__glsl_uniform]] [[__glsl_layout_in(0)]]
 	/// </summary>
 	class GlslVisitor : public shader_precompiler::ast::VisitorBase {
-		shader_precompiler::ast::BaseAstProcessor& from;
+		shader_precompiler::ast::TreeResult from;
 		IDiagnosticReporter& reporter;
 		std::ostream& out;
 
@@ -25,7 +25,8 @@ namespace shader_precompiler {
 		void visit(shader_precompiler::ast::nodes::Func& node) override;
 		void visit(shader_precompiler::ast::nodes::NumberExpr& node) override;
 	public:
-		GlslVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter, std::ostream& to) : from(from), reporter(reporter), out(to) {};
+		GlslVisitor(shader_precompiler::ast::TreeResult from, IDiagnosticReporter& reporter, std::ostream& to) : from(std::move(from)), reporter(reporter), out(to) {};
+		GlslVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter, std::ostream& to) : GlslVisitor(std::move(from.processTree()), reporter, to) {};
 		void generate();
 	};
 }

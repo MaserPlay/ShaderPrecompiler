@@ -31,6 +31,6 @@ namespace shader_precompiler::visitors {
 		void visit(shader_precompiler::ast::nodes::NumberExpr& node) override;
 	public:
 		MinimazerVisitor(shader_precompiler::ast::BaseAstProcessor& from, IDiagnosticReporter& reporter) : from(from), miniTable(NULL), reporter(reporter) {};
-		std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> processTree() override;
+		shader_precompiler::ast::TreeResult processTree() override;
 	};
 };

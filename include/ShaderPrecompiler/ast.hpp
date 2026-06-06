@@ -443,9 +443,10 @@ namespace shader_precompiler::ast {
 		return out;
 	}
 
+	using TreeResult = std::vector<std::unique_ptr<nodes::Node>>;
 	class BaseAstProcessor{
 	public:
-		virtual std::vector<std::unique_ptr<nodes::Node>> processTree() = 0;
+		virtual TreeResult processTree() = 0;
 	};
 
 	class AstParser : public BaseAstProcessor {
@@ -469,6 +470,6 @@ namespace shader_precompiler::ast {
 		PRINT_ERROR_DEFINE(shader_precompiler::Error::Stage::AST)
 	public:
 		AstParser(shader_precompiler::lexer::BaseLexerStream& stream, IDiagnosticReporter& reporter) : from(stream), reporter(reporter) {}
-		std::vector<std::unique_ptr<shader_precompiler::ast::nodes::Node>> processTree() override;
+		shader_precompiler::ast::TreeResult processTree() override;
 	};
 }
