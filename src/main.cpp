@@ -17,7 +17,7 @@
 #define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
 
 void createArgumentApi(argparse::ArgumentParser& program) {
-	program.add_argument("--no_fail", "-nf");
+	program.add_argument("--no_fail", "-nf").flag();
 	auto& input = program.add_mutually_exclusive_group(true);
 	input.add_argument("--input_file", "-if").help("Input by reading file");
 	input.add_argument("--code", "-c").help("Input by input arg");
@@ -39,6 +39,11 @@ void createArgumentApi(argparse::ArgumentParser& program) {
 	auto& output = program.add_mutually_exclusive_group();
 	output.add_argument("--output_file", "-of").help("Output by writing file");
 	output.add_argument("--std_cout", "-stdout").help("Output by std::cout").flag();
+
+	// Precompiler include api
+	program.add_argument("--include_dir", "-I")
+		.help("Add include search directory")
+		.append();
 }
 
 void collectInputCode(const argparse::ArgumentParser& program, std::function<void(std::istream&)> workWithStream) {
@@ -68,7 +73,12 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 
 }
 
-static void processAll(std::istream& in, std::ostream& out, bool skipFail = false) {
+static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::vector<std::string> includeDirectories) {
+	shader_precompiler::precompiler::Context preContext{};
+
+	for (const auto& dir : includeDirectories) {
+		preContext.includeDirectories.emplace_back(dir);
+	}
 
 	shader_precompiler::PrintDiagnostic prDa(shader_precompiler::locales::Locales::ENGLISH, std::cerr);
 
@@ -76,7 +86,14 @@ static void processAll(std::istream& in, std::ostream& out, bool skipFail = fals
 
 	shader_precompiler::lexer::LexerStream tokenStream(in, calcDa);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, calcDa);
+	shader_precompiler::precompiler::OpenFileFactory preFact = 
+		[&calcDa](std::filesystem::path path) {
+		return shader_precompiler::precompiler::fileStreamOpenFile(path, 
+			[&calcDa](std::istream& in) {
+				return std::make_unique<shader_precompiler::lexer::LexerStream>(in, calcDa);
+			});
+		};
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, calcDa, preFact, preContext);
 
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, calcDa);
 
@@ -156,9 +173,14 @@ int main(int argc, char* argv[]) {
 	//shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
 	collectInputCode(program, [&program](std::istream& in) {
+
 		outputResult(program, [&in, &program](std::ostream& out) {
-			processAll(in, out, program.is_used("-nf")); 
-			}); });
+
+			processAll(in, out, program.is_used("-nf"), program.get<std::vector<std::string>>("--include_dir"));
+
+			});
+		}
+	);
 
 	return 0;
 }

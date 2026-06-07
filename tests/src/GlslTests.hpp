@@ -10,7 +10,7 @@ static auto processGlsl(std::string base) {
 
 	shader_precompiler::lexer::LexerStream tokenStream(iss, da);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, da);
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, da, emptyFileFactory, shader_precompiler::precompiler::Context{});
 
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, da);
 

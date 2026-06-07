@@ -5,13 +5,36 @@
 #include "precompiler.hpp"
 #include "diagnostic_reporters.hpp"
 
+struct OpenFileStruct : public shader_precompiler::precompiler::BaseOpenFileStruct {
+	std::unique_ptr<std::istringstream> in;
+	std::unique_ptr< shader_precompiler::lexer::BaseLexerStream> str;
+	shader_precompiler::lexer::BaseLexerStream& getStream() override {
+		return *str;
+	};
+};
+
+static inline std::unique_ptr<shader_precompiler::precompiler::BaseOpenFileStruct> fileFactory(std::filesystem::path path, shader_precompiler::IDiagnosticReporter& rep) {
+	if (path.filename() == "number.txt") {
+		auto str = std::make_unique< OpenFileStruct>();
+		str->in = std::make_unique<std::istringstream>("#define NUMBER 1");   // создаём поток из строки
+		str->str = std::make_unique<shader_precompiler::lexer::LexerStream>(*str->in, rep);
+		return std::move(str);
+	}
+	return NULL;
+}
+
 static std::vector<shader_precompiler::lexer::Token> processPrecompiler(std::string base) {
 	std::istringstream iss(base);   // создаём поток из строки
 	shader_precompiler::PrintDiagnostic printDia(shader_precompiler::locales::Locales::ENGLISH);
 
 	shader_precompiler::lexer::LexerStream tokenStream( iss, printDia );
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, printDia );
+	shader_precompiler::precompiler::OpenFileFactory preFact =
+		[&printDia](std::filesystem::path path) {
+		return fileFactory(path, printDia);
+		};
+
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor( tokenStream, printDia, preFact, shader_precompiler::precompiler::Context{});
 
 	std::vector<shader_precompiler::lexer::Token> outputVector{};
 
@@ -39,6 +62,20 @@ TEST(PrecompilerTests, SimplyExpression) {
 	EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
 	EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Operator)
 	EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Number)
+}
+
+TEST(PrecompilerTests, SimplyExpressionInclude) {
+	auto tokens = processPrecompiler("#include \"number.txt\"\na = NUMBER");
+
+	ASSERT_SIZE(tokens, 3)
+
+		EXPECT_TEXT(tokens[0], "a")
+		EXPECT_TEXT(tokens[1], "=")
+		EXPECT_TEXT(tokens[2], "1")
+
+		EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
+		EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Operator)
+		EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Number)
 }
 
 TEST(PrecompilerTests, PreserveSimpleCode)

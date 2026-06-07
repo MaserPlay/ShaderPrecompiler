@@ -11,7 +11,7 @@ static auto processSemantic(std::string base, shader_precompiler::CalcDiagnostic
 
 	shader_precompiler::lexer::LexerStream tokenStream(iss, pr);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, pr);
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, pr, emptyFileFactory, shader_precompiler::precompiler::Context{});
 
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, pr);
 

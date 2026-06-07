@@ -20,6 +20,14 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
         "Unexpected macro name '{}'"
     },
     {
+        shader_precompiler::Error::ErrorCodes::UNEXPECTED_TOKEN,
+        "Unexpected token '{}'"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::TOKENS_AFTER_DIRECTIVE_AND_BEFORE_NEW_LINE,
+        "TOKENS_AFTER_DIRECTIVE_AND_BEFORE_NEW_LINE '{}'"
+    },
+    {
         shader_precompiler::Error::ErrorCodes::UNEXPECTED_START_TOKEN,
         "Unexpected start token '{}'"
     },

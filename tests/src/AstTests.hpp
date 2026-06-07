@@ -10,7 +10,7 @@ static auto processAst(std::string base) {
 
 	shader_precompiler::lexer::LexerStream tokenStream(iss, printDia);
 
-	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, printDia);
+	shader_precompiler::precompiler::PrecompilerLexerStream afterPreprocessor(tokenStream, printDia, emptyFileFactory, shader_precompiler::precompiler::Context{});
 
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, printDia);
 

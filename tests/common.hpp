@@ -5,6 +5,7 @@
 #include "lexer.hpp"
 #include "ast.hpp"
 #include "diagnostic_reporters.hpp"
+#include "precompiler.hpp"
 
 inline std::vector<std::string> tokensToDebugStrings(
     const std::vector<shader_precompiler::lexer::Token>& tokens)
@@ -16,6 +17,9 @@ inline std::vector<std::string> tokensToDebugStrings(
     }
 
     return result;
+}
+inline std::unique_ptr<shader_precompiler::precompiler::BaseOpenFileStruct> emptyFileFactory(std::filesystem::path p) {
+    return NULL;
 }
 
 inline bool areEqual(
