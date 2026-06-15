@@ -3,7 +3,7 @@
 #include <cctype>
 
 bool isOperator(char sym) {
-	for (char this_char : "+-*/=%&^|!?<>") {
+	for (char this_char : "+-*/=%&^|!?<>.") {
 		if (sym == this_char) {
 			return true;
 		}
@@ -55,7 +55,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 			return readNumber(".");
 		}
 
-		return readSymbol(".");
+		return readOperator(".");
 	}
 	if (nextChar == '/') {
 		getChar();
@@ -199,8 +199,6 @@ shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readSym
 
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readOperator(std::string prefix) {
 	std::string buffer = prefix;
-
-	buffer += getChar();
 
 	while (!eof()) {
 		char c = peekChar();

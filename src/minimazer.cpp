@@ -100,6 +100,11 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
 
         node.name->name = minimizate(currentFuncNamePosition);
     }
+
+    for (auto& param : node.params)
+    {
+        param->accept(*this);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Func& node){
     node.declaration->accept(*this);

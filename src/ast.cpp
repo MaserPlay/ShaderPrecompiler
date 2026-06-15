@@ -43,6 +43,7 @@ static bool isSingle(shader_precompiler::lexer::Token::Type t) {
 
 static short precedence(const std::string& op)
 {
+	if (op == ".") return 5;
 	if (op == "*" || op == "/") return 4;
 	if (op == "+" || op == "-") return 3;
 	return 0;
