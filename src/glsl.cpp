@@ -94,9 +94,17 @@ void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::IfEl
 }
 void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::Operator& node) {
 
-	node.left->accept(*this);
-	out << node.op;
-	node.right->accept(*this);
+	if (node.op == shader_precompiler::ast::nodes::Operator::Type::INDEX) {
+		node.left->accept(*this);
+		out << "[";
+		node.right->accept(*this);
+		out << "]";
+	}
+	else {
+		node.left->accept(*this);
+		out << shader_precompiler::ast::nodes::Operator::operatorTypeToString(node.op);
+		node.right->accept(*this);
+	}
 }
 void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::FuncDeclaration& node) {
 	node.returnType->accept(*this);

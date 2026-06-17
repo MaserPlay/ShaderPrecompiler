@@ -32,10 +32,10 @@ TEST(AstTests, SimplyExpression) {
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("a")
 			),
-			"=",
+			shader_precompiler::ast::nodes::Operator::Type::EQUALS,
 			std::make_unique<shader_precompiler::ast::nodes::Operator>(
 				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2),
-				"+",
+				shader_precompiler::ast::nodes::Operator::Type::ADD,
 				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2)
 			)
 		)
@@ -53,13 +53,13 @@ TEST(AstTests, RightOperationOrderExpression) {
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("a")
 			),
-			"=",
+			shader_precompiler::ast::nodes::Operator::Type::EQUALS,
 			std::make_unique<shader_precompiler::ast::nodes::Operator>(
 				std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2),
-				"+",
+				shader_precompiler::ast::nodes::Operator::Type::ADD,
 				std::make_unique<shader_precompiler::ast::nodes::Operator>(
 					std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2),
-					"*",
+					shader_precompiler::ast::nodes::Operator::Type::MULTIPLY,
 					std::make_unique< shader_precompiler::ast::nodes::NumberExpr>(2)
 				)
 			)
@@ -117,7 +117,7 @@ TEST(AstTests, PlusFunc) {
 					std::make_unique<shader_precompiler::ast::nodes::Return>(
 						std::make_unique<shader_precompiler::ast::nodes::Operator>(
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("one"),
-							"+",
+							shader_precompiler::ast::nodes::Operator::Type::ADD,
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("two")
 						)
 					)
@@ -138,7 +138,7 @@ TEST(AstTests, PlusFunc) {
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("int"),
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("p")
 						),
-						"=",
+						shader_precompiler::ast::nodes::Operator::Type::EQUALS,
 						std::make_unique<shader_precompiler::ast::nodes::FuncCall>(
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("plus"),
 							makeVector< shader_precompiler::ast::nodes::Node>(
@@ -203,7 +203,7 @@ void ladder(int number1, int number2) {
 					std::make_unique<shader_precompiler::ast::nodes::IfElse>(
 						std::make_unique<shader_precompiler::ast::nodes::Operator>(
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
-							"==",
+							shader_precompiler::ast::nodes::Operator::Type::IS_EQUALS,
 							std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
 						),
 						std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(
@@ -220,7 +220,7 @@ void ladder(int number1, int number2) {
 						std::make_unique<shader_precompiler::ast::nodes::IfElse>(
 							std::make_unique<shader_precompiler::ast::nodes::Operator>(
 								std::make_unique< shader_precompiler::ast::nodes::Identifier>("number1"),
-								">",
+								shader_precompiler::ast::nodes::Operator::Type::MORE,
 								std::make_unique< shader_precompiler::ast::nodes::Identifier>("number2")
 							),
 							std::make_unique< shader_precompiler::ast::nodes::CodeBlock>(

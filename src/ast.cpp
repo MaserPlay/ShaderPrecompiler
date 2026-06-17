@@ -41,13 +41,32 @@ static bool isSingle(shader_precompiler::lexer::Token::Type t) {
 		t == shader_precompiler::lexer::Token::Type::String;
 }
 
-static short precedence(const std::string& op)
-{
-	if (op == ".") return 5;
-	if (op == "*" || op == "/") return 4;
-	if (op == "+" || op == "-") return 3;
-	return 0;
+struct OperatorInfo {
+	std::string_view   symbol;
+	short              precedence;
+	shader_precompiler::ast::nodes::Operator::Type type;
+};
+
+static constexpr short k_index_precedence = 6;
+static constexpr OperatorInfo k_operators[] = {
+	{ ".",  5, shader_precompiler::ast::nodes::Operator::Type::MEMBER   },
+	{ "*",  4, shader_precompiler::ast::nodes::Operator::Type::MULTIPLY },
+	{ "/",  4, shader_precompiler::ast::nodes::Operator::Type::DIVIDE   },
+	{ "+",  3, shader_precompiler::ast::nodes::Operator::Type::ADD      },
+	{ "-",  3, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT },
+	{ "=",  0, shader_precompiler::ast::nodes::Operator::Type::EQUALS },
+	{ "==",  0, shader_precompiler::ast::nodes::Operator::Type::IS_EQUALS },
+	{ ">",  0, shader_precompiler::ast::nodes::Operator::Type::MORE },
+};
+
+static std::optional<OperatorInfo> operatorTypeFromToken(const std::string& text) {
+	for (const auto& info : k_operators) {
+		if (info.symbol == text)
+			return info;
+	}
+	return std::nullopt;
 }
+
 std::unique_ptr<shader_precompiler::ast::nodes::CodeBlock> shader_precompiler::ast::AstParser::parseCodeBlock() {
 
 	auto first = from.peek();
@@ -314,16 +333,8 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::ast::AstParser::parseAttributes() {
 	auto open = from.peek();
 	if (!(open &&
-		open->type == shader_precompiler::lexer::Token::Type::Symbol &&
-		open->text == "[")) {
-		return NULL;
-	}
-	from.get();
-
-	open = from.peek();
-	if (!(open &&
-		open->type == shader_precompiler::lexer::Token::Type::Symbol &&
-		open->text == "[")) {
+		open->type == shader_precompiler::lexer::Token::Type::Operator &&
+		open->text == "[[")) {
 		return NULL;
 	}
 	from.get();
@@ -345,8 +356,8 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 
 	auto close = from.peek();
 	if (!(close &&
-		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
-		close->text == "]")) {
+		close->type == shader_precompiler::lexer::Token::Type::Operator &&
+		close->text == "]]")) {
 		if (close) {
 			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *close);
 		}
@@ -356,21 +367,6 @@ std::unique_ptr<shader_precompiler::ast::nodes::Attribute> shader_precompiler::a
 		return node;
 	}
 	from.get();
-
-	close = from.peek();
-	if (!(close &&
-		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
-		close->text == "]")) {
-		if (close) {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *close);
-		}
-		else {
-			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN, shader_precompiler::Error::makeStore(), *open);
-		}
-		return node;
-	}
-	from.get();
-
 	return node;
 }
 std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::AstParser::parsePrimary() {
@@ -424,7 +420,10 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 		auto first = parseSingle();
 
-		func->params.push_back(std::move(first));
+		if (first != NULL)
+		{
+			func->params.push_back(std::move(first));
+		}
 
 		auto commaToken = from.peek();
 		if (!(commaToken && commaToken->type == shader_precompiler::lexer::Token::Type::Symbol &&
@@ -459,7 +458,43 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 		if (!op1) {
 			break;
 		}
-		else if (op1->type != shader_precompiler::lexer::Token::Type::Operator) {
+		
+		if (op1->type != shader_precompiler::lexer::Token::Type::Operator) {
+			break;
+		}
+
+		if (op1->text == "[") {
+			if (k_index_precedence < minPrec) break;
+
+			from.get(); // eat '['
+
+			auto indexExpr = parseExpression(parsePrimary());
+
+			auto closeToken = from.peek();
+			if (!closeToken || closeToken->text != "]") {
+				if (closeToken) {
+					printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *closeToken);
+				}
+				else {
+					printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *op1);
+				}
+			}
+			else {
+				from.get(); // eat ']'
+			}
+
+			auto operator_ = std::make_unique<shader_precompiler::ast::nodes::Operator>();
+			operator_->op = shader_precompiler::ast::nodes::Operator::Type::INDEX;
+			operator_->left = std::move(left);
+			operator_->right = std::move(indexExpr);
+			operator_->location = op1->location;
+
+			left = std::move(operator_);
+			continue;
+		}
+
+		auto opInfo = operatorTypeFromToken(op1->text);
+		if (!opInfo) {
 			break;
 		}
 
@@ -467,7 +502,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 		auto op = op1->text;
 
-		short prec = precedence(op);
+		short prec = opInfo->precedence;
 
 		if (prec < minPrec) break;
 
@@ -478,7 +513,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 		auto operator_ = std::make_unique<shader_precompiler::ast::nodes::Operator>();
 
 
-		operator_->op = op;
+		operator_->op = opInfo->type;
 		operator_->left = std::move(left);
 		operator_->right = std::move(right);
 

@@ -263,23 +263,52 @@ namespace shader_precompiler::ast {
 		};
 
 		struct Operator : Node {
+			enum class Type
+			{
+				ADD, // +
+				SUBTRACT, // -
+				MULTIPLY, // *
+				DIVIDE, // /
+				MEMBER,   // .
+				INDEX, // []
+				EQUALS, // =
+				IS_EQUALS, // ==
+				MORE, // ==
+			};
 			std::unique_ptr<Node> left;
-			std::string op;
+			Type op;
 			std::unique_ptr<Node> right;
+			
+			static std::string_view operatorTypeToString(Type t) {
+				switch (t) {
+				case Type::ADD:      return "+";
+				case Type::SUBTRACT: return "-";
+				case Type::MULTIPLY: return "*";
+				case Type::DIVIDE:   return "/";
+				case Type::MEMBER:   return ".";
+				case Type::INDEX:    return "[]";
+				case Type::EQUALS:    return "=";
+				case Type::IS_EQUALS:    return "==";
+				case Type::MORE:    return "==";
+				}
+				return "?";
+			}
+
 			std::string toDebugString(std::size_t nesting) const override {
 				std::string final = ident(nesting) + "Operator:\n";
 
 				final += unique_ptr_to_debug_string(left, nesting + 1) + '\n';
 
-				final += ident(nesting + 1) + op + '\n';
+				final += ident(nesting + 1) + std::string(operatorTypeToString(op)) + '\n';
 
 				final += unique_ptr_to_debug_string(right, nesting + 1);
 
 				return final;
 			}
-			Operator() = default;
-			Operator(std::unique_ptr<Node> left, std::string op, std::unique_ptr<Node> right) : 
-				left(std::move(left)), right(std::move(right)), op(op) {}
+			Operator() = default;			
+			Operator(std::unique_ptr<Node> left, Type op, std::unique_ptr<Node> right)
+				: left(std::move(left)), op(op), right(std::move(right)) {
+			}
 
 			void accept(VisitorBase& base) override {
 				base.visit(*this);

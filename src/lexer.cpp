@@ -3,7 +3,7 @@
 #include <cctype>
 
 bool isOperator(char sym) {
-	for (char this_char : "+-*/=%&^|!?<>.") {
+	for (char this_char : "+-*/=%&^|!?<>.[]") {
 		if (sym == this_char) {
 			return true;
 		}
@@ -12,7 +12,7 @@ bool isOperator(char sym) {
 }
 
 bool isSymbol(char sym) {
-	for (char this_char : ";,(){}\"[]") {
+	for (char this_char : ";,(){}\"") {
 		if (sym == this_char) {
 			return true;
 		}

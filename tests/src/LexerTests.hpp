@@ -272,25 +272,31 @@ TEST(Lexer, FunctionCallWithClassAndArguments)
     EXPECT_TYPE(tokens[13], shader_precompiler::lexer::Token::Type::Symbol)
 }
 
-TEST(Lexer, CallFunctionOutput)
+TEST(Lexer, CallFunctionOutputArray)
 {
     auto tokens = processLexer(
-        "func_name().property;"
+        "func_name().property[1];"
     );
 
-    ASSERT_SIZE(tokens, 6)
+    ASSERT_SIZE(tokens, 9)
 
         EXPECT_TEXT(tokens[0], "func_name")
         EXPECT_TEXT(tokens[1], "(")
         EXPECT_TEXT(tokens[2], ")")
         EXPECT_TEXT(tokens[3], ".")
         EXPECT_TEXT(tokens[4], "property")
-        EXPECT_TEXT(tokens[5], ";")
+        EXPECT_TEXT(tokens[5], "[")
+        EXPECT_TEXT(tokens[6], "1")
+        EXPECT_TEXT(tokens[7], "]")
+        EXPECT_TEXT(tokens[8], ";")
 
         EXPECT_TYPE(tokens[0], shader_precompiler::lexer::Token::Type::Identifier)
         EXPECT_TYPE(tokens[1], shader_precompiler::lexer::Token::Type::Symbol)
         EXPECT_TYPE(tokens[2], shader_precompiler::lexer::Token::Type::Symbol)
         EXPECT_TYPE(tokens[3], shader_precompiler::lexer::Token::Type::Operator)
         EXPECT_TYPE(tokens[4], shader_precompiler::lexer::Token::Type::Identifier)
-        EXPECT_TYPE(tokens[5], shader_precompiler::lexer::Token::Type::Symbol)
+        EXPECT_TYPE(tokens[5], shader_precompiler::lexer::Token::Type::Operator)
+        EXPECT_TYPE(tokens[6], shader_precompiler::lexer::Token::Type::Number)
+        EXPECT_TYPE(tokens[7], shader_precompiler::lexer::Token::Type::Operator)
+        EXPECT_TYPE(tokens[8], shader_precompiler::lexer::Token::Type::Symbol)
 }
