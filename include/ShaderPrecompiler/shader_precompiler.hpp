@@ -9,7 +9,7 @@ namespace shader_precompiler {
 
 	enum class ShaderLanguages {
 		GLSL,
-		ESSL
+		GLES
 	};
 
 	struct Location {

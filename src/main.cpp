@@ -13,8 +13,9 @@
 #include "minimazer.hpp"
 #include "semantic.hpp"
 #include "to_glsl.hpp"
+#include "to_gles.hpp"
 
-#define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "ESSL"
+#define SHADER_LANGUAGES_VALUES_STRINGS "GLSL", "GLES"
 
 void createArgumentApi(argparse::ArgumentParser& program) {
 	program.add_argument("--no_fail", "-nf").flag();
@@ -23,18 +24,18 @@ void createArgumentApi(argparse::ArgumentParser& program) {
 	input.add_argument("--code", "-c").help("Input by input arg");
 	input.add_argument("--std_cin", "-stdin").help("Input by std::cin").flag();
 
-	//std::string shader_langs[]{ SHADER_LANGUAGES_VALUES_STRINGS };
+	std::string shader_langs[]{ SHADER_LANGUAGES_VALUES_STRINGS };
 
-	//std::string list;
-	//for (const auto& s : shader_langs)
-	//{
-	//	list += ", " + s;
-	//}
+	std::string list;
+	for (const auto& s : shader_langs)
+	{
+		list += ", " + s;
+	}
 
-	//program.add_argument("--out_language", "-ol")
-	//	.help("what shader language to use to output the result. One of" + list)
-	//	.required()
-	//	.choices(SHADER_LANGUAGES_VALUES_STRINGS);
+	program.add_argument("--out_language", "-ol")
+		.help("what shader language to use to output the result. One of" + list)
+		.required()
+		.choices(SHADER_LANGUAGES_VALUES_STRINGS);
 
 	auto& output = program.add_mutually_exclusive_group();
 	output.add_argument("--output_file", "-of").help("Output by writing file");
@@ -73,7 +74,7 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 
 }
 
-static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::vector<std::string> includeDirectories) {
+static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::vector<std::string> includeDirectories, shader_precompiler::ShaderLanguages shl) {
 	shader_precompiler::precompiler::Context preContext{};
 
 	for (const auto& dir : includeDirectories) {
@@ -103,8 +104,18 @@ static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::
 
 	auto tree = sem.processTree();
 	if (skipFail || calcDa.getErrorsCount(shader_precompiler::Error::Level::FATAL) == 0) {
-		shader_precompiler::GlslVisitor glsl(std::move(tree), calcDa, out);
-		glsl.generate();
+		switch (shl) {
+		case shader_precompiler::ShaderLanguages::GLSL: {
+			shader_precompiler::GlslVisitor glsl(std::move(tree), calcDa, out);
+			glsl.generate();
+			break;
+		}
+		case shader_precompiler::ShaderLanguages::GLES: {
+			shader_precompiler::GlesVisitor gles(std::move(tree), calcDa, out);
+			gles.generate();
+			break;
+		}
+		}
 	}
 }
 
@@ -170,13 +181,13 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	//shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
+	shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
-	collectInputCode(program, [&program](std::istream& in) {
+	collectInputCode(program, [&program, shl](std::istream& in) {
 
-		outputResult(program, [&in, &program](std::ostream& out) {
+		outputResult(program, [&in, &program, shl](std::ostream& out) {
 
-			processAll(in, out, program.is_used("-nf"), program.get<std::vector<std::string>>("--include_dir"));
+			processAll(in, out, program.is_used("-nf"), program.get<std::vector<std::string>>("--include_dir"), shl);
 
 			});
 		}
