@@ -47,7 +47,7 @@ void createArgumentApi(argparse::ArgumentParser& program) {
 		.append();
 }
 
-void collectInputCode(const argparse::ArgumentParser& program, std::function<void(std::istream&)> workWithStream) {
+void collectInputCode(const argparse::ArgumentParser& program, std::function<void(std::istream&, std::filesystem::path)> workWithStream) {
 
 	// Collect Input Code
 	if (auto file_name = program.present<std::string>("--input_file")) {
@@ -57,15 +57,15 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 			std::cerr << "Failed to open file: " << *file_name << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
-		workWithStream(file);
+		workWithStream(file, std::filesystem::path(*file_name));
 
 	}
 	else if (program.get<bool>("--std_cin") == true) {
-		workWithStream(std::cin);
+		workWithStream(std::cin, std::filesystem::path());
 	}
 	else if (auto code_arg = program.present<std::string>("--code")) {
 		std::istringstream str(*code_arg);
-		workWithStream(str);
+		workWithStream(str, std::filesystem::path());
 	}
 	else {
 		std::cerr << "Failed to get input_code" << std::endl;
@@ -74,9 +74,10 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 
 }
 
-static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::vector<std::string> includeDirectories, shader_precompiler::ShaderLanguages shl) {
+static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::vector<std::string> includeDirectories, std::filesystem::path currentPath, shader_precompiler::ShaderLanguages shl) {
 	shader_precompiler::precompiler::Context preContext{};
 
+	preContext.currentPath = currentPath;
 	for (const auto& dir : includeDirectories) {
 		preContext.includeDirectories.emplace_back(dir);
 	}
@@ -108,7 +109,8 @@ static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::
 		shader_precompiler::SemanticVisitor::Func("vec3", "vec3", {}),
 		shader_precompiler::SemanticVisitor::Func("vec2", "vec2", {}),
 		shader_precompiler::SemanticVisitor::Func("mat4", "mat4", {}),
-		shader_precompiler::SemanticVisitor::Func("mat3", "mat3", {})
+		shader_precompiler::SemanticVisitor::Func("mat3", "mat3", {}),
+		shader_precompiler::SemanticVisitor::Func("vec4", "texture", {})
 	);
 
 	auto tree = sem.processTree();
@@ -192,11 +194,11 @@ int main(int argc, char* argv[]) {
 
 	shader_precompiler::ShaderLanguages shl = getShaderLanguage(program);
 
-	collectInputCode(program, [&program, shl](std::istream& in) {
+	collectInputCode(program, [&program, shl](std::istream& in, std::filesystem::path inPath) {
 
-		outputResult(program, [&in, &program, shl](std::ostream& out) {
+		outputResult(program, [&in, &program, shl, inPath](std::ostream& out) {
 
-			processAll(in, out, program.is_used("-nf"), program.get<std::vector<std::string>>("--include_dir"), shl);
+			processAll(in, out, program.is_used("-nf"), program.get<std::vector<std::string>>("--include_dir"), inPath, shl);
 
 			});
 		}

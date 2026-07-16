@@ -287,7 +287,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 
 void shader_precompiler::precompiler::PrecompilerLexerStream::readFileInclude(std::filesystem::path filepath, shader_precompiler::Location location) {
 
-	auto relativePath = context.currentPath.parent_path() / filepath;
+	auto relativePath = std::filesystem::weakly_canonical(context.currentPath.parent_path() / filepath);
 	if (tryReadFile(relativePath)) {
 		return;
 	}
@@ -297,7 +297,7 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::readFileInclude(st
 
 	for (auto& inclDir : context.includeDirectories)
 	{
-		auto path = inclDir / filepath;
+		auto path = std::filesystem::weakly_canonical(inclDir / filepath);
 		if (std::filesystem::is_regular_file(path)) {
 			if (tryReadFile(path)) {
 				return;
@@ -345,6 +345,7 @@ bool shader_precompiler::precompiler::PrecompilerLexerStream::tryReadFile(std::f
 		return false;
 	}
 	includeStack.push_back(std::move(res));
+	return true;
 }
 
 struct FileStreamOpenFileStruct : public shader_precompiler::precompiler::BaseOpenFileStruct {
