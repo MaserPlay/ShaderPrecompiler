@@ -24,6 +24,10 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
         "Unexpected token '{}'"
     },
     {
+        shader_precompiler::Error::ErrorCodes::CANT_OPEN_FILE,
+        "Can`t open file '{}'"
+    },
+    {
         shader_precompiler::Error::ErrorCodes::TOKENS_AFTER_DIRECTIVE_AND_BEFORE_NEW_LINE,
         "TOKENS_AFTER_DIRECTIVE_AND_BEFORE_NEW_LINE '{}'"
     },

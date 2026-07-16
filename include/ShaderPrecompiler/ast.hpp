@@ -274,6 +274,10 @@ namespace shader_precompiler::ast {
 				EQUALS, // =
 				IS_EQUALS, // ==
 				MORE, // ==
+				ADD_EQUALS, // +=
+				MULTIPLY_EQUALS, // *=
+				SUBTRACT_EQUALS, // -=
+				DIVIDE_EQUALS, // /=
 			};
 			std::unique_ptr<Node> left;
 			Type op;
@@ -290,6 +294,10 @@ namespace shader_precompiler::ast {
 				case Type::EQUALS:    return "=";
 				case Type::IS_EQUALS:    return "==";
 				case Type::MORE:    return "==";
+				case Type::ADD_EQUALS:    return "+=";
+				case Type::MULTIPLY_EQUALS:    return "*=";
+				case Type::SUBTRACT_EQUALS:    return "-=";
+				case Type::DIVIDE_EQUALS:    return "/=";
 				}
 				return "?";
 			}

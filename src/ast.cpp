@@ -55,6 +55,10 @@ static constexpr OperatorInfo k_operators[] = {
 	{ "+",  3, shader_precompiler::ast::nodes::Operator::Type::ADD      },
 	{ "-",  3, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT },
 	{ "=",  0, shader_precompiler::ast::nodes::Operator::Type::EQUALS },
+	{ "+=",  0, shader_precompiler::ast::nodes::Operator::Type::ADD_EQUALS },
+	{ "-=",  0, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT_EQUALS },
+	{ "/=",  0, shader_precompiler::ast::nodes::Operator::Type::DIVIDE_EQUALS },
+	{ "*=",  0, shader_precompiler::ast::nodes::Operator::Type::MULTIPLY_EQUALS },
 	{ "==",  0, shader_precompiler::ast::nodes::Operator::Type::IS_EQUALS },
 	{ ">",  0, shader_precompiler::ast::nodes::Operator::Type::MORE },
 };

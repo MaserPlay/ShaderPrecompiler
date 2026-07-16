@@ -123,8 +123,7 @@ TEST(AstTests, PlusFunc) {
 					)
 				)
 			)
-		)
-		,
+		),
 		std::make_unique<shader_precompiler::ast::nodes::Func>(
 			std::make_unique<shader_precompiler::ast::nodes::FuncDeclaration>(
 				std::make_unique< shader_precompiler::ast::nodes::Identifier>("void"),
