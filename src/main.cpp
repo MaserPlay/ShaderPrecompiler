@@ -100,18 +100,8 @@ static void processAll(std::istream& in, std::ostream& out, bool skipFail, std::
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, calcDa);
 
 	shader_precompiler::visitors::MinimazerVisitor min(ast, calcDa);
-
-	shader_precompiler::SemanticVisitor sem(min, calcDa);
-
-	sem.addTypes("vec4", "vec3", "vec2", "mat3", "mat4", "float", "int", "sampler2D");
-	sem.addFunctions(
-		shader_precompiler::SemanticVisitor::Func("vec4", "vec4", {}),
-		shader_precompiler::SemanticVisitor::Func("vec3", "vec3", {}),
-		shader_precompiler::SemanticVisitor::Func("vec2", "vec2", {}),
-		shader_precompiler::SemanticVisitor::Func("mat4", "mat4", {}),
-		shader_precompiler::SemanticVisitor::Func("mat3", "mat3", {}),
-		shader_precompiler::SemanticVisitor::Func("vec4", "texture", {})
-	);
+    shader_precompiler::SemanticVisitor sem(min, calcDa);
+	sem.addShaderTypesFunctions();
 
 	auto tree = sem.processTree();
 	if (skipFail || calcDa.getErrorsCount(shader_precompiler::Error::Level::FATAL) == 0) {

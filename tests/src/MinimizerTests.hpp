@@ -15,6 +15,7 @@ static auto processMinimizer(std::string base, shader_precompiler::CalcDiagnosti
 	shader_precompiler::visitors::MinimazerVisitor min(ast, da);
 
 	shader_precompiler::SemanticVisitor sem(min, da);
+	sem.addShaderTypesFunctions();
 	actionWithSemantic(sem);
 
 	return sem.processTree();

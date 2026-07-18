@@ -16,6 +16,7 @@ static auto processSemantic(std::string base, shader_precompiler::CalcDiagnostic
 	shader_precompiler::ast::AstParser ast(afterPreprocessor, pr);
 
 	shader_precompiler::SemanticVisitor sem(ast, da);
+	sem.addShaderTypesFunctions();
 	actionWithSemantic(sem);
 
 	return sem.processTree();
@@ -33,7 +34,7 @@ TEST(SemanticTests, Predeclareted) {
 	shader_precompiler::PrintDiagnostic pr(shader_precompiler::locales::Locales::ENGLISH);
 	shader_precompiler::CalcDiagnostic da(pr);
 	auto tree = processSemantic("vec3 v; void main(){vec3 two = vec3(1,1,1);}", da, [](shader_precompiler::SemanticVisitor& sem) {
-		sem.addTypes("vec3");
+		sem.addTypes(shader_precompiler::SemanticVisitor::Type("vec3"));
 		sem.addFunctions(shader_precompiler::SemanticVisitor::Func{ "vec3", "vec3", {
 			shader_precompiler::SemanticVisitor::Variable{"float", "x"},
 			shader_precompiler::SemanticVisitor::Variable{"float", "y"},

@@ -76,7 +76,9 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Operator& node){
     node.left->accept(*this);
-    node.right->accept(*this);
+    if (node.op != shader_precompiler::ast::nodes::Operator::Type::MEMBER) {
+        node.right->accept(*this);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::FuncDeclaration& node){
 
