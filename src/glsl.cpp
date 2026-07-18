@@ -1,5 +1,6 @@
 #include "to_glsl.hpp"
 
+#include <charconv>
 
 void shader_precompiler::GlslVisitor::generate() {
 	out << "#version 330 core\n";
@@ -145,5 +146,14 @@ void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::Func
 	node.code->accept(*this);
 }
 void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::NumberExpr& node) {
-	out << std::to_string(node.value);
+
+	char buf[32];
+
+	auto [ptr, ec] = std::to_chars(
+		buf,
+		buf + sizeof(buf),
+		node.value,
+		std::chars_format::general);
+
+	out << std::string(buf, ptr);
 }

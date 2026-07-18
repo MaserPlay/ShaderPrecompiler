@@ -429,8 +429,8 @@ namespace shader_precompiler::ast {
 		};
 
 		struct NumberExpr : Node {
-			std::size_t value;
-			NumberExpr(std::size_t name) : value(name) {}
+			float value;
+			NumberExpr(float v) : value(v) {}
 			std::string toDebugString(std::size_t nesting) const override {
 				return ident(nesting) + std::to_string(value);
 			}

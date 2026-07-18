@@ -140,7 +140,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 		if (token->type == shader_precompiler::lexer::Token::Type::Number) {
 			ret = std::make_unique<
 				shader_precompiler::ast::nodes::NumberExpr
-			>(std::stoull(token->text));
+			>(std::stof(token->text));
 			ret->location = token->location;
 		}
 		else {
@@ -422,7 +422,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 			break;
 		}
 
-		auto first = parseSingle();
+		auto first = parseExpression(parseSingle());
 
 		if (first != NULL)
 		{
