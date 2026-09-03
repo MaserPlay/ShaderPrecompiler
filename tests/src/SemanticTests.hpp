@@ -30,6 +30,17 @@ TEST(SemanticTests, NoErrors) {
 	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
 }
 
+TEST(SemanticTests, NoErrorsFunc) {
+	shader_precompiler::PrintDiagnostic pr(shader_precompiler::locales::Locales::ENGLISH);
+	shader_precompiler::CalcDiagnostic da(pr);
+	auto tree = processSemantic(R"(
+float rand2(vec2 seed) {
+	return fract(sin(dot(seed.xy, vec2(12.9898, 78.233))) * 43758.5453);
+})", da);
+
+	ASSERT_LE(da.getErrorsCount(shader_precompiler::Error::Level::FATAL), 0) << shader_precompiler::ast::toDebugString(tree);
+}
+
 TEST(SemanticTests, Predeclareted) {
 	shader_precompiler::PrintDiagnostic pr(shader_precompiler::locales::Locales::ENGLISH);
 	shader_precompiler::CalcDiagnostic da(pr);

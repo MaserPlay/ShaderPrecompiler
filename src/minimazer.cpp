@@ -3,7 +3,7 @@
 #include <string>
 
 std::string minimizate(std::size_t num) {
-	const std::string letters = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNNM";
+	const std::string letters = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
     const std::size_t base = letters.size();
 
     if (num == 0) return std::string(1, letters[0]);
@@ -55,8 +55,10 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
         node.name = minimizate(currentFuncNamePosition);
     }
 }
-void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Return& node){
-    node.value->accept(*this);
+void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Return& node) {
+    if (node.value) {
+        node.value->accept(*this);
+    }
 }
 void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Attribute& node){
     
@@ -69,14 +71,22 @@ void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::a
         node.name->name = minimizate((*this->miniTable).size() - 1);
     }
 }
-void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::IfElse& node){
-    node.ifCondition->accept(*this);
-    node.elseBranch->accept(*this);
-    node.thenBranch->accept(*this);
+void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::IfElse& node) {
+    if (node.ifCondition) {
+        node.ifCondition->accept(*this);
+    }
+    if (node.elseBranch) {
+        node.elseBranch->accept(*this);
+    }
+    if (node.thenBranch) {
+        node.thenBranch->accept(*this);
+    }
 }
-void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Operator& node){
-    node.left->accept(*this);
-    if (node.op != shader_precompiler::ast::nodes::Operator::Type::MEMBER) {
+void shader_precompiler::visitors::MinimazerVisitor::visit(shader_precompiler::ast::nodes::Operator& node) {
+    if (node.left) {
+        node.left->accept(*this);
+    }
+    if (node.op != shader_precompiler::ast::nodes::Operator::Type::MEMBER && node.right) {
         node.right->accept(*this);
     }
 }

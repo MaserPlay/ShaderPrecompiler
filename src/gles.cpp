@@ -30,7 +30,9 @@ void shader_precompiler::GlesVisitor::visit(shader_precompiler::ast::nodes::Iden
 	// out << "precision mediump float";
 }
 void shader_precompiler::GlesVisitor::visit(shader_precompiler::ast::nodes::Return& node) {
-	node.value->accept(*this);
+	if (node.value) {
+		node.value->accept(*this);
+	}
 }
 void shader_precompiler::GlesVisitor::visit(shader_precompiler::ast::nodes::Attribute& node) {
 

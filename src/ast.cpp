@@ -167,13 +167,16 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 	if (!secondToken ||
 		secondToken->type != shader_precompiler::lexer::Token::Type::Identifier) {
-		if (secondToken) {
-			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::makeStore(firstToken->toDebugString()), *secondToken);
+		// first уже съеден из потока — доразбираем его здесь как вызов функции
+	// или обычное выражение, а не теряем.
+		auto id = dynamic_unique_cast_ptr<shader_precompiler::ast::nodes::Identifier>(first);
+		if (id) {
+			if (auto call = parseFunctionCall(id)) {
+				return parseExpression(std::move(call));
+			}
+			return parseExpression(std::move(id));
 		}
-		else {
-			printError(shader_precompiler::Error::Level::INFO, shader_precompiler::Error::ErrorCodes::TYPE_ALONE, shader_precompiler::Error::makeStore(firstToken->toDebugString()), *firstToken);
-		}
-		return NULL;
+		return parseExpression(std::move(first));
 	}
 
 	auto second = parseSingle();
@@ -291,6 +294,12 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 	if (!(close &&
 		close->type == shader_precompiler::lexer::Token::Type::Symbol &&
 		close->text == ")")) {
+		if (close) {
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *close);
+		}
+		else {
+			printError(shader_precompiler::Error::Level::ERROR, shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN, shader_precompiler::Error::makeStore(), *open);
+		}
 	}
 	else {
 		from.get();
@@ -422,7 +431,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 			break;
 		}
 
-		auto first = parseExpression(parseSingle());
+		auto first = parseExpression(parsePrimary());
 
 		if (first != NULL)
 		{

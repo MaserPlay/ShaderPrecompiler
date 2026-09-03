@@ -55,7 +55,7 @@ void collectInputCode(const argparse::ArgumentParser& program, std::function<voi
 
 		if (!file.is_open()) {
 			std::cerr << "Failed to open file: " << *file_name << std::endl;
-			std::exit(EXIT_FAILURE);
+			std::abort();
 		}
 		workWithStream(file, std::filesystem::path(*file_name));
 
@@ -162,6 +162,10 @@ void outputResult(const argparse::ArgumentParser& program, std::function<void(st
 		if (out.is_open())
 		{
 			workWithStream(out);
+		}
+		else {
+			std::cerr << "Failed to open output file: " << file_name << std::endl;
+			std::abort();
 		}
 
 		out.close();

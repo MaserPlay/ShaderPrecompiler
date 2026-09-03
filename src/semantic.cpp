@@ -83,8 +83,6 @@ void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::
     }
 
     if (node.elseBranch == NULL) {
-        printError(Error::Level::FATAL, Error::ErrorCodes::TOKEN_IS_NULL, Error::makeStore(), node.location);
-        return;
     }
     else {
         node.elseBranch->accept(*this);
@@ -178,6 +176,13 @@ void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::
 
     if (!isFunctionName(node.name->name)) {
         printError(Error::Level::FATAL, Error::ErrorCodes::UNDEFINDED_FUNCTION, Error::makeStore(node.name->name), node.location);
+    }
+    for (auto& param : node.params) {
+        if (param == NULL) {
+            printError(Error::Level::FATAL, Error::ErrorCodes::UNDEFINDED_FUNCTION, Error::makeStore(node.name->name), node.location);
+            continue;
+        }
+        param->accept(*this);
     }
 }
 void shader_precompiler::SemanticVisitor::visit(shader_precompiler::ast::nodes::Func& node) {

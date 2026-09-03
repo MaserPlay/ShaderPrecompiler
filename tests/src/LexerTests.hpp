@@ -51,9 +51,9 @@ TEST(Lexer, Comment)
 }
 TEST(Lexer, MultiLineComment)
 {
-    auto tokens = processLexer("/**** texttexttext\n\n\n\n\n\n\n**************/");
+    auto tokens = processLexer("/**** texttexttext\n\n\n\n\n\n\n**************/2");
 
-    ASSERT_SIZE(tokens, 1)
+    ASSERT_SIZE(tokens, 2)
 }
 
 TEST(Lexer, Number)

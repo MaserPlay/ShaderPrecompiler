@@ -97,10 +97,10 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 	}
 	else if (directiveToken.text == "#endif")
 	{
-		if (deleteNestedIfDefs > 1) {
+		if (deleteNestedIfDefs >= 1) {
 			deleteNestedIfDefs--;
 		}
-		if (numNestedIfdef > 1) {
+		if (numNestedIfdef >= 1) {
 			numNestedIfdef--;
 		}
 		return;
@@ -204,19 +204,24 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 				return;
 			}
 			else if (directiveToken.text == "#ifdef") {
-				if (defines.find(nextWord) == end(defines))
-				{
+				if (deleteNestedIfDefs > 0) {
+					// уже внутри пропускаемого блока — условие не проверяем,
+					// просто считаем вложенность, чтобы парный #endif не закрыл
+					// внешний блок раньше времени
 					deleteNestedIfDefs++;
 				}
-				else
+				else if (defines.find(nextWord) == end(defines))
 				{
-
+					deleteNestedIfDefs++;
 				}
 				skipToNewLine();
 				return;
 			}
 			else if (directiveToken.text == "#ifndef") {
-				if (defines.find(nextWord) == end(defines))
+				if (deleteNestedIfDefs > 0) {
+					deleteNestedIfDefs++;
+				}
+				else if (defines.find(nextWord) == end(defines))
 				{
 				}
 				else
@@ -228,46 +233,24 @@ void shader_precompiler::precompiler::PrecompilerLexerStream::handleDirective(co
 			}
 			else if (directiveToken.text == "#elifdef") {
 				if (deleteNestedIfDefs == 1) {
-
-					if (defines.find(nextWord) == end(defines))
-					{
+					if (defines.find(nextWord) != end(defines)) {
 						deleteNestedIfDefs--;
-					}
-					else
-					{
 					}
 				}
 				else if (deleteNestedIfDefs == 0) {
-					if (defines.find(nextWord) == end(defines))
-					{
-						deleteNestedIfDefs++;
-					}
-					else
-					{
-					}
+					deleteNestedIfDefs++;
 				}
 				skipToNewLine();
 				return;
 			}
 			else if (directiveToken.text == "#elifndef") {
 				if (deleteNestedIfDefs == 1) {
-
-					if (defines.find(nextWord) == end(defines))
-					{
-					}
-					else
-					{
+					if (defines.find(nextWord) == end(defines)) {
 						deleteNestedIfDefs--;
 					}
 				}
 				else if (deleteNestedIfDefs == 0) {
-					if (defines.find(nextWord) == end(defines))
-					{
-					}
-					else
-					{
-						deleteNestedIfDefs++;
-					}
+					deleteNestedIfDefs++;
 				}
 				skipToNewLine();
 				return;

@@ -87,6 +87,7 @@ std::optional<shader_precompiler::lexer::Token> shader_precompiler::lexer::Lexer
 shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readCommentStartSlash() {
 	std::string buffer = "/";
 	bool isMultiLine = (peekChar() == '*');
+	bool lastSymbolStar = false;
 	char c = peekChar();
 
 	if (isMultiLine) {
@@ -94,9 +95,11 @@ shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readCom
 
 			buffer += getChar();
 
-			if (buffer.back() == '*' && c == '/') {
+			if (lastSymbolStar && c == '/') {
 				break;
 			}
+
+			lastSymbolStar = c == '*';
 
 			c = peekChar();
 		}
@@ -104,12 +107,11 @@ shader_precompiler::lexer::Token shader_precompiler::lexer::LexerStream::readCom
 	else {
 		while (!eof()) {
 
-			buffer += getChar();
-
 			if (c == '\n') {
 				break;
 			}
 
+			buffer += getChar();
 			c = peekChar();
 		}
 	}

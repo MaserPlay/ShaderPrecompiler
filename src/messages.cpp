@@ -36,6 +36,14 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
         "Unexpected start token '{}'"
     },
     {
+        shader_precompiler::Error::ErrorCodes::NO_CLOSE_ATTRIBUTE_TOKEN,
+        "No closed attribute token"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::NO_CLOSE_BRACKET_TOKEN,
+        "No closed bracket token"
+    },
+    {
         shader_precompiler::Error::ErrorCodes::TYPE_ALONE,
         "Type alone '{}'"
     },
@@ -66,6 +74,17 @@ const std::map<shader_precompiler::Error::ErrorCodes, std::string> EN_MESSAGES
     {
         shader_precompiler::Error::ErrorCodes::LAYOUT_IN_INVALID_PARAMS,
         "[[__glsl_layout_in(  )]] invalid params"
+    },{
+        shader_precompiler::Error::ErrorCodes::NO_DIRECTIVE_NAME,
+        "Directive has no name"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::DELETING_BY_DEFINE,
+        "Macro '{}' expands to nothing"
+    },
+    {
+        shader_precompiler::Error::ErrorCodes::MULTIPLE_ATTRIBUTES,
+        "Multiple conflicting attributes on the same declaration"
     },
 };
 
