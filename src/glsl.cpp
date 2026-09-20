@@ -29,6 +29,8 @@ void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::Iden
 	out << node.name;
 }
 void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::Return& node) {
+	out << "return ";
+	
 	if (node.value) {
 		node.value->accept(*this);
 	}
