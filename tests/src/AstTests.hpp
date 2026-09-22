@@ -290,10 +290,3 @@ TEST(AstTests, Atrributes) {
 
 	ASSERT_TRUE_AST(rightTree, tree);
 }
-TEST(A, a) {
-	auto tree = processAst(" void main(){float alpha = smoothstep(		0.5 - width,		0.5 + width,		dist);	FragColor = vec4(textColor.rgb, textColor.a * alpha);}");
-
-	auto rightTree = makeVector<shader_precompiler::ast::nodes::Node>();
-
-	ASSERT_TRUE_AST(rightTree, tree);
-}

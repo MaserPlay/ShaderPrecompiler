@@ -41,30 +41,10 @@ static bool isSingle(shader_precompiler::lexer::Token::Type t) {
 		t == shader_precompiler::lexer::Token::Type::String;
 }
 
-struct OperatorInfo {
-	std::string_view   symbol;
-	short              precedence;
-	shader_precompiler::ast::nodes::Operator::Type type;
-};
-
 static constexpr short k_index_precedence = 6;
-static constexpr OperatorInfo k_operators[] = {
-	{ ".",  5, shader_precompiler::ast::nodes::Operator::Type::MEMBER   },
-	{ "*",  4, shader_precompiler::ast::nodes::Operator::Type::MULTIPLY },
-	{ "/",  4, shader_precompiler::ast::nodes::Operator::Type::DIVIDE   },
-	{ "+",  3, shader_precompiler::ast::nodes::Operator::Type::ADD      },
-	{ "-",  3, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT },
-	{ "=",  0, shader_precompiler::ast::nodes::Operator::Type::EQUALS },
-	{ "+=",  0, shader_precompiler::ast::nodes::Operator::Type::ADD_EQUALS },
-	{ "-=",  0, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT_EQUALS },
-	{ "/=",  0, shader_precompiler::ast::nodes::Operator::Type::DIVIDE_EQUALS },
-	{ "*=",  0, shader_precompiler::ast::nodes::Operator::Type::MULTIPLY_EQUALS },
-	{ "==",  0, shader_precompiler::ast::nodes::Operator::Type::IS_EQUALS },
-	{ ">",  0, shader_precompiler::ast::nodes::Operator::Type::MORE },
-};
 
-static std::optional<OperatorInfo> operatorTypeFromToken(const std::string& text) {
-	for (const auto& info : k_operators) {
+static std::optional<shader_precompiler::ast::OperatorInfo> operatorTypeFromToken(const std::string& text) {
+	for (const auto& info : shader_precompiler::ast::operatorsInfo) {
 		if (info.symbol == text)
 			return info;
 	}
@@ -140,7 +120,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 		if (token->type == shader_precompiler::lexer::Token::Type::Number) {
 			ret = std::make_unique<
 				shader_precompiler::ast::nodes::NumberExpr
-			>(std::stof(token->text));
+			>(std::stof(token->text), token->text.find('.') != std::string::npos);
 			ret->location = token->location;
 		}
 		else {
@@ -513,7 +493,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 		left->location = op1->location;
 
-		auto op = op1->text;
+		auto& op = op1->text;
 
 		short prec = opInfo->precedence;
 
@@ -521,7 +501,7 @@ std::unique_ptr<shader_precompiler::ast::nodes::Node> shader_precompiler::ast::A
 
 		from.get();
 
-		auto right = parseExpression(parsePrimary(), prec + 2);
+		auto right = parseExpression(parsePrimary(), prec + 1);
 
 		auto operator_ = std::make_unique<shader_precompiler::ast::nodes::Operator>();
 

@@ -430,7 +430,8 @@ namespace shader_precompiler::ast {
 
 		struct NumberExpr : Node {
 			float value;
-			NumberExpr(float v) : value(v) {}
+			bool floating;
+			NumberExpr(float v, bool floating = true) : value(v), floating(floating) {}
 			std::string toDebugString(std::size_t nesting) const override {
 				return ident(nesting) + std::to_string(value);
 			}
@@ -445,6 +446,31 @@ namespace shader_precompiler::ast {
 				return false;
 			}
 		};
+	};
+
+	struct OperatorInfo {
+		std::string_view   symbol;
+		short              precedence;
+		shader_precompiler::ast::nodes::Operator::Type type;
+	};
+
+	inline constexpr OperatorInfo operatorsInfo[] = {
+			{ ".",  5, shader_precompiler::ast::nodes::Operator::Type::MEMBER   },
+
+			{ "*",  4, shader_precompiler::ast::nodes::Operator::Type::MULTIPLY },
+			{ "/",  4, shader_precompiler::ast::nodes::Operator::Type::DIVIDE   },
+
+			{ "+",  3, shader_precompiler::ast::nodes::Operator::Type::ADD      },
+			{ "-",  3, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT },
+
+			{ "=",  1, shader_precompiler::ast::nodes::Operator::Type::EQUALS },
+			{ "+=",  1, shader_precompiler::ast::nodes::Operator::Type::ADD_EQUALS },
+			{ "-=",  1, shader_precompiler::ast::nodes::Operator::Type::SUBTRACT_EQUALS },
+			{ "/=",  1, shader_precompiler::ast::nodes::Operator::Type::DIVIDE_EQUALS },
+			{ "*=",  1, shader_precompiler::ast::nodes::Operator::Type::MULTIPLY_EQUALS },
+
+			{ "==",  2, shader_precompiler::ast::nodes::Operator::Type::IS_EQUALS },
+			{ ">",  2, shader_precompiler::ast::nodes::Operator::Type::MORE },
 	};
 
 	inline bool haveAttribute(std::vector<std::unique_ptr<nodes::Attribute>>& attributes, std::string name) {

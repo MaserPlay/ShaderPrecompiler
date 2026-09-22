@@ -97,18 +97,91 @@ void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::IfEl
 		node.elseBranch->accept(*this);
 	}
 }
+static bool needBrackets(
+	shader_precompiler::ast::nodes::Operator::Type parent,
+	shader_precompiler::ast::nodes::Operator::Type child,
+	bool rightChild
+)
+{
+	int parentPrec;
+	int childPrec;
+
+	for (const auto& info : shader_precompiler::ast::operatorsInfo) {
+		if (info.type == parent) {
+			parentPrec = info.precedence;
+		}
+		else if (info.type == child) {
+			childPrec = info.precedence;
+		}
+	}
+
+
+	if (childPrec < parentPrec)
+		return true;
+
+	if (childPrec > parentPrec)
+		return false;
+
+	// Одинаковый precedence.
+
+	if (!rightChild)
+		return false;
+
+	using Type = shader_precompiler::ast::nodes::Operator::Type;
+
+	switch (parent)
+	{
+	case Type::SUBTRACT:
+		// a - (b + c)
+		// a - (b - c)
+		return child == Type::ADD ||
+			child == Type::SUBTRACT;
+
+	case Type::DIVIDE:
+		// a / (b * c)
+		// a / (b / c)
+		return child == Type::MULTIPLY ||
+			child == Type::DIVIDE;
+
+	default:
+		return false;
+	}
+}
+
 void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::Operator& node) {
 
-	if (node.op == shader_precompiler::ast::nodes::Operator::Type::INDEX) {
+	if (
+		auto* childOp = dynamic_cast<shader_precompiler::ast::nodes::Operator*>(node.left.get());
+		childOp && needBrackets(node.op, childOp->op, false)
+		) {
+		out << "(";
 		node.left->accept(*this);
+		out << ")";
+	}
+	else {
+		node.left->accept(*this);
+	}
+
+	if (node.op == shader_precompiler::ast::nodes::Operator::Type::INDEX) {
 		out << "[";
 		node.right->accept(*this);
 		out << "]";
 	}
 	else {
-		node.left->accept(*this);
 		out << shader_precompiler::ast::nodes::Operator::operatorTypeToString(node.op);
-		node.right->accept(*this);
+
+		if (
+			auto* childOp = dynamic_cast<shader_precompiler::ast::nodes::Operator*>(node.right.get());
+			childOp && needBrackets(node.op, childOp->op, true)
+			) {
+			out << "(";
+			node.right->accept(*this);
+			out << ")";
+		}
+		else {
+			node.right->accept(*this);
+		}
+
 	}
 }
 void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::FuncDeclaration& node) {
@@ -159,5 +232,12 @@ void shader_precompiler::GlslVisitor::visit(shader_precompiler::ast::nodes::Numb
 		node.value,
 		std::chars_format::general);
 
-	out << std::string(buf, ptr);
+	std::string value(buf, ptr);
+
+	out << value;
+
+	if (node.floating && 
+		value.find('.') == std::string::npos) {
+		out << ".";
+	}
 }
